@@ -16,4 +16,4 @@ about:
 
 ---
 
-About this blog
+Welcome to my Machine Learning blog for Spring 2025!
