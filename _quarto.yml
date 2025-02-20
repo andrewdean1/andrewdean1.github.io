@@ -3,7 +3,7 @@ project:
   output-dir: docs
 
 website:
-  title: "My Awesome CSCI 0451 Blog"
+  title: "Andrew Dean's Machine Learning (CSCI 0451) Blog"
   navbar:
     background: "#112a39"
     right:
@@ -15,7 +15,7 @@ website:
 
 format:
   html:
-    title-block-banner: img/landscape.png
+    title-block-banner: img/gradient.png
     title-block-banner-color: white
     theme: cosmo
     css: styles.css
