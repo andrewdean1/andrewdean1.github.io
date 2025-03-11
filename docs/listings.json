@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/auditing-bias/auditing-bias.html",
       "/posts/blog-2/blog-2.html",
       "/posts/blog-1/blog1.html"
     ]

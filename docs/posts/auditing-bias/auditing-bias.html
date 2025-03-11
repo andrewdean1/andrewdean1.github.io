@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.40">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Dean">
+<meta name="dcterms.date" content="2025-03-11">
+<meta name="description" content="Predicts employment status. Gives comprehensive audit of bias.">
+
+<title>Auditing Bias – Andrew Dean’s Machine Learning (CSCI 0451) Blog</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-6de787833effe4777a6777a5e05fb578.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>
+
+      .quarto-title-block .quarto-title-banner h1,
+      .quarto-title-block .quarto-title-banner h2,
+      .quarto-title-block .quarto-title-banner h3,
+      .quarto-title-block .quarto-title-banner h4,
+      .quarto-title-block .quarto-title-banner h5,
+      .quarto-title-block .quarto-title-banner h6
+      {
+        color: white;
+      }
+
+      .quarto-title-block .quarto-title-banner {
+        color: white;
+background-image: url(../../img/gradient.png);
+background-size: cover;
+      }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Andrew Dean’s Machine Learning (CSCI 0451) Blog</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Auditing Bias</h1>
+                  <div>
+        <div class="description">
+          Predicts employment status. Gives comprehensive audit of bias.
+        </div>
+      </div>
+                </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Andrew Dean </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 11, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>This blog post examines the ethical implications of automated decision systems through the lens of employment prediction. Using the American Community Survey (ACS) dataset from New York State, I develop a decision tree classifier to predict employment status based on demographic features while excluding race as a predictor. I then conduct a comprehensive bias audit to evaluate the model’s fairness across racial groups</p>
+<p>My analysis reveals some disparities (although small) in model performance. I achieve an overall accuracy of 82.4%. I found only a small difference in the accuracy between white and black individuals, with white individuals having an accuracy of 0.829 and black individuals having an accuracy of 0.819.</p>
+<p>The model does also exhibit some varying false positive and negative rates across racial groups. White individuals experience a false positive rate of 20.0% compared to 20.9% for Black individuals, highlighting subtle differences in error patterns.</p>
+<p>I further investigate three key fairness criteria: calibration, error rate balance, and statistical parity. My findings demonstrate the fundamental impossibility result described by Chouldechova (2017) - when prevalence rates differ between groups, it is mathematically impossible to simultaneously satisfy all fairness criteria. Through visualization of feasible (FNR, FPR) combinations, I illustrate the inherent trade-offs in fairness measures and quantify the adjustments needed to equalize error rates.</p>
+<p>This work underscores the critical importance of auditing automated decision systems for bias and the necessity of making deliberate, context-specific choices about which fairness criteria to prioritize in real-world applications.</p>
+<div id="cell-2" class="cell" data-execution_count="89">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> folktables <span class="im">import</span> ACSDataSource, ACSEmployment, BasicProblem, adult_filter</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>STATE <span class="op">=</span> <span class="st">"NY"</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># data_source = ACSDataSource(survey_year='2018', </span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#                             horizon='1-Year', </span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#                             survey='person')</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># acs_data = data_source.get_data(states=[STATE], download=False)</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>acs_data <span class="op">=</span> pd.read_csv(<span class="st">'/Users/dean@middlebury.edu/Desktop/cs451/andrewdean1.github.io/posts/auditing-bias/psam_p36.csv'</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>acs_data.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="89">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">RT</th>
+<th data-quarto-table-cell-role="th">SERIALNO</th>
+<th data-quarto-table-cell-role="th">DIVISION</th>
+<th data-quarto-table-cell-role="th">SPORDER</th>
+<th data-quarto-table-cell-role="th">PUMA</th>
+<th data-quarto-table-cell-role="th">REGION</th>
+<th data-quarto-table-cell-role="th">ST</th>
+<th data-quarto-table-cell-role="th">ADJINC</th>
+<th data-quarto-table-cell-role="th">PWGTP</th>
+<th data-quarto-table-cell-role="th">AGEP</th>
+<th data-quarto-table-cell-role="th">...</th>
+<th data-quarto-table-cell-role="th">PWGTP71</th>
+<th data-quarto-table-cell-role="th">PWGTP72</th>
+<th data-quarto-table-cell-role="th">PWGTP73</th>
+<th data-quarto-table-cell-role="th">PWGTP74</th>
+<th data-quarto-table-cell-role="th">PWGTP75</th>
+<th data-quarto-table-cell-role="th">PWGTP76</th>
+<th data-quarto-table-cell-role="th">PWGTP77</th>
+<th data-quarto-table-cell-role="th">PWGTP78</th>
+<th data-quarto-table-cell-role="th">PWGTP79</th>
+<th data-quarto-table-cell-role="th">PWGTP80</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>P</td>
+<td>2018GQ0000012</td>
+<td>2</td>
+<td>1</td>
+<td>3802</td>
+<td>1</td>
+<td>36</td>
+<td>1013097</td>
+<td>145</td>
+<td>26</td>
+<td>...</td>
+<td>146</td>
+<td>146</td>
+<td>21</td>
+<td>24</td>
+<td>266</td>
+<td>263</td>
+<td>21</td>
+<td>146</td>
+<td>265</td>
+<td>144</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>P</td>
+<td>2018GQ0000040</td>
+<td>2</td>
+<td>1</td>
+<td>2702</td>
+<td>1</td>
+<td>36</td>
+<td>1013097</td>
+<td>43</td>
+<td>21</td>
+<td>...</td>
+<td>6</td>
+<td>42</td>
+<td>43</td>
+<td>7</td>
+<td>40</td>
+<td>6</td>
+<td>43</td>
+<td>40</td>
+<td>42</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>P</td>
+<td>2018GQ0000060</td>
+<td>2</td>
+<td>1</td>
+<td>2001</td>
+<td>1</td>
+<td>36</td>
+<td>1013097</td>
+<td>88</td>
+<td>18</td>
+<td>...</td>
+<td>88</td>
+<td>163</td>
+<td>161</td>
+<td>162</td>
+<td>87</td>
+<td>12</td>
+<td>162</td>
+<td>88</td>
+<td>87</td>
+<td>88</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>P</td>
+<td>2018GQ0000081</td>
+<td>2</td>
+<td>1</td>
+<td>2401</td>
+<td>1</td>
+<td>36</td>
+<td>1013097</td>
+<td>109</td>
+<td>85</td>
+<td>...</td>
+<td>17</td>
+<td>15</td>
+<td>111</td>
+<td>107</td>
+<td>17</td>
+<td>196</td>
+<td>109</td>
+<td>200</td>
+<td>198</td>
+<td>111</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>P</td>
+<td>2018GQ0000103</td>
+<td>2</td>
+<td>1</td>
+<td>1400</td>
+<td>1</td>
+<td>36</td>
+<td>1013097</td>
+<td>83</td>
+<td>19</td>
+<td>...</td>
+<td>81</td>
+<td>12</td>
+<td>80</td>
+<td>154</td>
+<td>12</td>
+<td>80</td>
+<td>12</td>
+<td>83</td>
+<td>152</td>
+<td>154</td>
+</tr>
+</tbody>
+</table>
+
+<p>5 rows × 286 columns</p>
+</div>
+</div>
+</div>
+<div id="cell-3" class="cell" data-execution_count="90">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>possible_features<span class="op">=</span>[<span class="st">'AGEP'</span>, <span class="st">'SCHL'</span>, <span class="st">'MAR'</span>, <span class="st">'RELP'</span>, <span class="st">'DIS'</span>, <span class="st">'ESP'</span>, <span class="st">'CIT'</span>, <span class="st">'MIG'</span>, <span class="st">'MIL'</span>, <span class="st">'ANC'</span>, <span class="st">'NATIVITY'</span>, <span class="st">'DEAR'</span>, <span class="st">'DEYE'</span>, <span class="st">'DREM'</span>, <span class="st">'SEX'</span>, <span class="st">'RAC1P'</span>, <span class="st">'ESR'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="goal-predict-employment-status-on-the-basis-of-demographics-excluding-race-and-audit-for-racial-bias." class="level3">
+<h3 class="anchored" data-anchor-id="goal-predict-employment-status-on-the-basis-of-demographics-excluding-race-and-audit-for-racial-bias.">GOAL: Predict employment status on the basis of demographics excluding race, and audit for racial bias.</h3>
+<div id="cell-5" class="cell" data-execution_count="91">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># features to use</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>features_to_use <span class="op">=</span> [f <span class="cf">for</span> f <span class="kw">in</span> possible_features <span class="cf">if</span> f <span class="kw">not</span> <span class="kw">in</span> [<span class="st">"ESR"</span>, <span class="st">"RAC1P"</span>]]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create the problem: predict employment status ESR, using the race RAC1P as the group label</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>EmploymentProblem <span class="op">=</span> BasicProblem(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    features<span class="op">=</span>features_to_use,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    target<span class="op">=</span><span class="st">'ESR'</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    target_transform<span class="op">=</span><span class="kw">lambda</span> x: x <span class="op">==</span> <span class="dv">1</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    group<span class="op">=</span><span class="st">'RAC1P'</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    preprocess<span class="op">=</span><span class="kw">lambda</span> x: x,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    postprocess<span class="op">=</span><span class="kw">lambda</span> x: np.nan_to_num(x, <span class="op">-</span><span class="dv">1</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>features, label, group <span class="op">=</span> EmploymentProblem.df_to_numpy(acs_data)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># split into train/test</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test, group_train, group_test <span class="op">=</span> train_test_split(</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    features, label, group, test_size<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<div id="cell-6" class="cell" data-execution_count="92">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert data to DataFrame for easier analysis</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create DataFrame from training data</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>df_train <span class="op">=</span> pd.DataFrame(X_train, columns<span class="op">=</span>features_to_use)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>df_train[<span class="st">"group"</span>] <span class="op">=</span> group_train</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>df_train[<span class="st">"label"</span>] <span class="op">=</span> y_train</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create DataFrame from test data</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>df_test <span class="op">=</span> pd.DataFrame(X_test, columns<span class="op">=</span>features_to_use)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>df_test[<span class="st">"group"</span>] <span class="op">=</span> group_test</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>df_test[<span class="st">"label"</span>] <span class="op">=</span> y_test</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine train and test for overall analysis</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>df_full <span class="op">=</span> pd.concat([df_train, df_test])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+</section>
+<section id="basic-descriptives" class="level2">
+<h2 class="anchored" data-anchor-id="basic-descriptives">Basic Descriptives</h2>
+<p>How many individuals are in the data?</p>
+<div id="cell-9" class="cell" data-execution_count="93">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>total_individuals <span class="op">=</span> <span class="bu">len</span>(df_full)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Total number of individuals in the dataset: </span><span class="sc">{</span>total_individuals<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total number of individuals in the dataset: 196967</code></pre>
+</div>
+</div>
+<p>Of these individuals, what proportion have target label equal to 1? In employment prediction, these would correspond to employed individuals.</p>
+<div id="cell-11" class="cell" data-execution_count="94">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>employed_proportion <span class="op">=</span> df_full[<span class="st">"label"</span>].mean()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Proportion of employed individuals: </span><span class="sc">{</span>employed_proportion<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>employed_proportion<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Proportion of employed individuals: 0.4644 (46.44%)</code></pre>
+</div>
+</div>
+<p>Of these individuals, how many are in each of the groups?</p>
+<div id="cell-13" class="cell" data-execution_count="95">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>group_counts <span class="op">=</span> df_full[<span class="st">"group"</span>].value_counts().sort_index()</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Number of individuals in each racial group:"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(group_counts)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Number of individuals in each racial group:
+group
+1    138474
+2     24024
+3       508
+4         5
+5       244
+6     17030
+7        72
+8     10964
+9      5646
+Name: count, dtype: int64</code></pre>
+</div>
+</div>
+<p>The groups are classified as follows: - White alone (1) - Black or African American alone (2) - American Indian alone (3) - Alaska Native alone (4) - American Indian and Alaska Native tribes specified, or American Indian or Alaska Native, not specified and no other races (5) - Asian alone (6) - Native Hawaiian and Other Pacific Islander alone (7) - Some Other Race alone (8) - Two or More Races (9)</p>
+<p>In each group, what proportion of individuals have target label equal to 1?</p>
+<div id="cell-16" class="cell" data-execution_count="96">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>employment_by_group <span class="op">=</span> df_full.groupby(<span class="st">"group"</span>)[<span class="st">"label"</span>].mean().sort_index()</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Proportion of employed individuals by racial group:"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> group, proportion <span class="kw">in</span> employment_by_group.items():</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Group </span><span class="sc">{</span><span class="bu">int</span>(group)<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>proportion<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>proportion<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Proportion of employed individuals by racial group:
+Group 1: 0.4736 (47.36%)
+Group 2: 0.4212 (42.12%)
+Group 3: 0.4272 (42.72%)
+Group 4: 0.6000 (60.00%)
+Group 5: 0.3443 (34.43%)
+Group 6: 0.4975 (49.75%)
+Group 7: 0.3889 (38.89%)
+Group 8: 0.4443 (44.43%)
+Group 9: 0.3702 (37.02%)</code></pre>
+</div>
+</div>
+<p>Below I check for intersectional trends by studying the proportion of positive target labels broken out by race groups and sex.</p>
+<div id="cell-18" class="cell" data-execution_count="97">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># add the SEX column from the original data</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>df_full[<span class="st">"SEX"</span>] <span class="op">=</span> np.concatenate([X_train[:, features_to_use.index(<span class="st">"SEX"</span>)], </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                                X_test[:, features_to_use.index(<span class="st">"SEX"</span>)]])</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># visualization of employment rates by race and sex</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate employment rates by race and sex</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>employment_by_race_sex <span class="op">=</span> df_full.groupby([<span class="st">"group"</span>, <span class="st">"SEX"</span>])[<span class="st">"label"</span>].mean().reset_index()</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>employment_by_race_sex[<span class="st">"group"</span>] <span class="op">=</span> employment_by_race_sex[<span class="st">"group"</span>].astype(<span class="bu">int</span>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>employment_by_race_sex[<span class="st">"SEX"</span>] <span class="op">=</span> employment_by_race_sex[<span class="st">"SEX"</span>].<span class="bu">map</span>({<span class="dv">1</span>: <span class="st">"Male"</span>, <span class="dv">2</span>: <span class="st">"Female"</span>})</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Define group labels</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>group_labels <span class="op">=</span> {</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="dv">1</span>: <span class="st">"White"</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="dv">2</span>: <span class="st">"Black"</span>,</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>    <span class="dv">3</span>: <span class="st">"American Indian"</span>,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="dv">4</span>: <span class="st">"Alaska Native"</span>,</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="dv">5</span>: <span class="st">"Am. Indian &amp; Alaska Native"</span>,</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    <span class="dv">6</span>: <span class="st">"Asian"</span>,</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>    <span class="dv">7</span>: <span class="st">"Native Hawaiian &amp; Pacific Isl."</span>,</span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>    <span class="dv">8</span>: <span class="st">"Other Race"</span>,</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="dv">9</span>: <span class="st">"Two or More Races"</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert group numbers to labels</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>employment_by_race_sex[<span class="st">'group_label'</span>] <span class="op">=</span> employment_by_race_sex[<span class="st">'group'</span>].<span class="bu">map</span>(group_labels)</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">6</span>))</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>sns.barplot(x<span class="op">=</span><span class="st">"group_label"</span>, y<span class="op">=</span><span class="st">"label"</span>, hue<span class="op">=</span><span class="st">"SEX"</span>, data<span class="op">=</span>employment_by_race_sex)</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Employment Rate by Race and Sex"</span>)</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Race"</span>)</span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">"Employment Rate"</span>)</span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>plt.ylim(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>plt.xticks(rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="auditing-bias_files/figure-html/cell-10-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Figure 1. Employment Rate by Race and Sex. We see that for two-thirds of the groups, the employment rate is higher for males. An interesting outlier: male identifying alaskan natives have a 100% employment rate.</p>
+<section id="building-a-model" class="level3">
+<h3 class="anchored" data-anchor-id="building-a-model">Building a model</h3>
+<div id="cell-21" class="cell" data-execution_count="98">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Building a simple model</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeClassifier</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>dt_classifier <span class="op">=</span> DecisionTreeClassifier(random_state <span class="op">=</span> <span class="dv">42</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>dt_classifier.fit(X_train, y_train)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>train_accuracy <span class="op">=</span> dt_classifier.score(X_train, y_train)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Training Accuracy without optimization: </span><span class="sc">{</span>train_accuracy<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Training Accuracy without optimization: 0.909</code></pre>
+</div>
+</div>
+<p>I fit a decision tree classifier to the training data and receive an accuracy of 91%. This is before I optimize my model by finding the optimal depth and use cross-validation.</p>
+</section>
+<section id="model-optimization" class="level3">
+<h3 class="anchored" data-anchor-id="model-optimization">Model Optimization</h3>
+<p>Now I utilize the max_depth parameter to see if we can improve by finding the optimal depth. I use cross-validation to evaluate the performance of the model at each depth. We find that the optimal depth is 10, and this optimized model achieves 82.7% accuracy on the training set.</p>
+<div id="cell-24" class="cell" data-execution_count="99">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> cross_val_score</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>potential_depths <span class="op">=</span>  <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">21</span>)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>mean_scores <span class="op">=</span> []</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> depth <span class="kw">in</span> potential_depths:</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    classifier_instance <span class="op">=</span> DecisionTreeClassifier(max_depth <span class="op">=</span> depth, random_state <span class="op">=</span> <span class="dv">42</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    scores <span class="op">=</span> cross_val_score(classifier_instance, X_train, y_train, cv <span class="op">=</span> <span class="dv">5</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    mean_scores.append(scores.mean())</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>optimal_depth <span class="op">=</span> potential_depths[np.argmax(mean_scores)]</span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Optimal Depth: </span><span class="sc">{</span>optimal_depth<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Train new model with optimal depth</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>dt_classifier_optimal <span class="op">=</span> DecisionTreeClassifier(max_depth <span class="op">=</span> optimal_depth, random_state <span class="op">=</span> <span class="dv">42</span>)</span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>dt_classifier_optimal.fit(X_train, y_train)</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>train_accuracy_optimal <span class="op">=</span> dt_classifier_optimal.score(X_train, y_train)</span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Training Accuracy with Optimal Depth: </span><span class="sc">{</span>train_accuracy_optimal<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Optimal Depth: 10
+Training Accuracy with Optimal Depth: 0.827</code></pre>
+</div>
+</div>
+<p>Testing accuracy for the optimized model:</p>
+<div id="cell-26" class="cell" data-execution_count="100">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>y_hat <span class="op">=</span> dt_classifier_optimal.predict(X_test)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>(y_hat <span class="op">==</span> y_test).mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="100">
+<pre><code>0.8236787328019496</code></pre>
+</div>
+</div>
+<p>Looking at two specific groups:</p>
+<div id="cell-28" class="cell" data-execution_count="101">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">#The accuracy for white individuals is</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>white_group_accuracy <span class="op">=</span> (y_hat <span class="op">==</span> y_test)[group_test <span class="op">==</span> <span class="dv">1</span>].mean()</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"White Accuracy: </span><span class="sc">{</span>white_group_accuracy<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co">#The accuracy for Black individuals is</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>black_group_accuracy <span class="op">=</span> (y_hat <span class="op">==</span> y_test)[group_test <span class="op">==</span> <span class="dv">2</span>].mean()</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Black Accuracy: </span><span class="sc">{</span>black_group_accuracy<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>White Accuracy: 0.829
+Black Accuracy: 0.819</code></pre>
+</div>
+</div>
+</section>
+<section id="overall-measures-on-test-data" class="level3">
+<h3 class="anchored" data-anchor-id="overall-measures-on-test-data">Overall Measures on Test Data</h3>
+<p>Now that I have my model, I will begin to delve into the intricacies such as its positive predictive value (PPV), false negative rate (FNR), and false positive rate (FPR). This is crucial to begin to understand how the model fluctuates, as later we will hone in on the disparities in these metrics across racial groups.</p>
+<div id="cell-30" class="cell" data-execution_count="102">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall Measures on Test Data</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> accuracy_score, precision_score, confusion_matrix</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Get predictions on test data</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>y_pred <span class="op">=</span> dt_classifier_optimal.predict(X_test)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Overall accuracy</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>overall_accuracy <span class="op">=</span> accuracy_score(y_test, y_pred)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Overall Accuracy: </span><span class="sc">{</span>overall_accuracy<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>overall_accuracy<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Positive Predictive Value (Precision)</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>ppv <span class="op">=</span> precision_score(y_test, y_pred)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Positive Predictive Value (PPV): </span><span class="sc">{</span>ppv<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>ppv<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Calculate confusion matrix</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>tn, fp, fn, tp <span class="op">=</span> confusion_matrix(y_test, y_pred).ravel()</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="co"># False Negative Rate (FNR) = FN / (FN + TP)</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>fnr <span class="op">=</span> fn <span class="op">/</span> (fn <span class="op">+</span> tp)</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"False Negative Rate (FNR): </span><span class="sc">{</span>fnr<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>fnr<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="co"># False Positive Rate (FPR) = FP / (FP + TN)</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>fpr <span class="op">=</span> fp <span class="op">/</span> (fp <span class="op">+</span> tn)</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"False Positive Rate (FPR): </span><span class="sc">{</span>fpr<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>fpr<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Confusion Matrix Summary:"</span>)</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"True Positives (TP): </span><span class="sc">{</span>tp<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"False Positives (FP): </span><span class="sc">{</span>fp<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"True Negatives (TN): </span><span class="sc">{</span>tn<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"False Negatives (FN): </span><span class="sc">{</span>fn<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Overall Accuracy: 0.8237 (82.37%)
+Positive Predictive Value (PPV): 0.7802 (78.02%)
+False Negative Rate (FNR): 0.1327 (13.27%)
+False Positive Rate (FPR): 0.2146 (21.46%)
+
+Confusion Matrix Summary:
+True Positives (TP): 15978
+False Positives (FP): 4501
+True Negatives (TN): 16470
+False Negatives (FN): 2445</code></pre>
+</div>
+</div>
+<p>Above I display the overall accuracy, positive predictive value, false negative rate, and false positive rate for the model, summarized by a confusion matrix. Before diving deeper into the intricacies of these values, the ratio of TP to FP (and TN to FN) looks like our model is making some good predictions. There seem to be more FP than FN, though, so it will be interesting to look into why that is.</p>
+</section>
+<section id="analysis-of-bias-auditing-for-bias-across-racial-groups" class="level3">
+<h3 class="anchored" data-anchor-id="analysis-of-bias-auditing-for-bias-across-racial-groups">Analysis of Bias: Auditing for Bias Across Racial Groups</h3>
+<p>Building an “accurate” model is great, but without understanding the potential biases that exist within it, we can only give it so much trust. To begin to understand the disparities in the model, I will audit the model for bias across racial groups.</p>
+<div id="cell-34" class="cell" data-execution_count="103">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a DataFrame for analysis</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>audit_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'true'</span>: y_test,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'pred'</span>: y_pred,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">'group'</span>: group_test</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate metrics for a specific group</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_group_metrics(group_data):</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>    y_true <span class="op">=</span> group_data[<span class="st">'true'</span>]</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>    y_pred <span class="op">=</span> group_data[<span class="st">'pred'</span>]</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(y_true) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">None</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>    acc <span class="op">=</span> accuracy_score(y_true, y_pred)</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a>    prec <span class="op">=</span> precision_score(y_true, y_pred)</span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a>    tn, fp, fn, tp <span class="op">=</span> confusion_matrix(y_true, y_pred, labels<span class="op">=</span>[<span class="dv">0</span>, <span class="dv">1</span>]).ravel()</span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a>    fnr <span class="op">=</span> fn <span class="op">/</span> (fn <span class="op">+</span> tp) <span class="cf">if</span> (fn <span class="op">+</span> tp) <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a>    fpr <span class="op">=</span> fp <span class="op">/</span> (fp <span class="op">+</span> tn) <span class="cf">if</span> (fp <span class="op">+</span> tn) <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">'count'</span>: <span class="bu">len</span>(y_true),</span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">'accuracy'</span>: acc,</span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a>        <span class="st">'ppv'</span>: prec,</span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a>        <span class="st">'fnr'</span>: fnr,</span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a>        <span class="st">'fpr'</span>: fpr,</span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a>        <span class="st">'tp'</span>: tp,</span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a>        <span class="st">'fp'</span>: fp,</span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a>        <span class="st">'tn'</span>: tn,</span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a>        <span class="st">'fn'</span>: fn</span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a><span class="co"># get metrics for each group</span></span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> {}</span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> group <span class="kw">in</span> <span class="bu">sorted</span>(audit_df[<span class="st">'group'</span>].unique()):</span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a>    group_data <span class="op">=</span> audit_df[audit_df[<span class="st">'group'</span>] <span class="op">==</span> group]</span>
+<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a>    results[group] <span class="op">=</span> calculate_group_metrics(group_data)</span>
+<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a summary table</span></span>
+<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a>metrics_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb24-45"><a href="#cb24-45" aria-hidden="true" tabindex="-1"></a>    group: {</span>
+<span id="cb24-46"><a href="#cb24-46" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Count'</span>: results[group][<span class="st">'count'</span>],</span>
+<span id="cb24-47"><a href="#cb24-47" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>: results[group][<span class="st">'accuracy'</span>],</span>
+<span id="cb24-48"><a href="#cb24-48" aria-hidden="true" tabindex="-1"></a>        <span class="st">'PPV'</span>: results[group][<span class="st">'ppv'</span>],</span>
+<span id="cb24-49"><a href="#cb24-49" aria-hidden="true" tabindex="-1"></a>        <span class="st">'FNR'</span>: results[group][<span class="st">'fnr'</span>],</span>
+<span id="cb24-50"><a href="#cb24-50" aria-hidden="true" tabindex="-1"></a>        <span class="st">'FPR'</span>: results[group][<span class="st">'fpr'</span>]</span>
+<span id="cb24-51"><a href="#cb24-51" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">for</span> group <span class="kw">in</span> results</span>
+<span id="cb24-52"><a href="#cb24-52" aria-hidden="true" tabindex="-1"></a>}).T</span>
+<span id="cb24-53"><a href="#cb24-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-54"><a href="#cb24-54" aria-hidden="true" tabindex="-1"></a><span class="co"># Add overall results</span></span>
+<span id="cb24-55"><a href="#cb24-55" aria-hidden="true" tabindex="-1"></a>overall_metrics <span class="op">=</span> calculate_group_metrics(audit_df)</span>
+<span id="cb24-56"><a href="#cb24-56" aria-hidden="true" tabindex="-1"></a>metrics_df.loc[<span class="st">'Overall'</span>] <span class="op">=</span> [</span>
+<span id="cb24-57"><a href="#cb24-57" aria-hidden="true" tabindex="-1"></a>    overall_metrics[<span class="st">'count'</span>],</span>
+<span id="cb24-58"><a href="#cb24-58" aria-hidden="true" tabindex="-1"></a>    overall_metrics[<span class="st">'accuracy'</span>],</span>
+<span id="cb24-59"><a href="#cb24-59" aria-hidden="true" tabindex="-1"></a>    overall_metrics[<span class="st">'ppv'</span>],</span>
+<span id="cb24-60"><a href="#cb24-60" aria-hidden="true" tabindex="-1"></a>    overall_metrics[<span class="st">'fnr'</span>],</span>
+<span id="cb24-61"><a href="#cb24-61" aria-hidden="true" tabindex="-1"></a>    overall_metrics[<span class="st">'fpr'</span>]</span>
+<span id="cb24-62"><a href="#cb24-62" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb24-63"><a href="#cb24-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-64"><a href="#cb24-64" aria-hidden="true" tabindex="-1"></a><span class="co"># make percentages</span></span>
+<span id="cb24-65"><a href="#cb24-65" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> [<span class="st">'Accuracy'</span>, <span class="st">'PPV'</span>, <span class="st">'FNR'</span>, <span class="st">'FPR'</span>]:</span>
+<span id="cb24-66"><a href="#cb24-66" aria-hidden="true" tabindex="-1"></a>    metrics_df[col] <span class="op">=</span> metrics_df[col].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>x<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb24-67"><a href="#cb24-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-68"><a href="#cb24-68" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(metrics_df)</span>
+<span id="cb24-69"><a href="#cb24-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-70"><a href="#cb24-70" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize</span></span>
+<span id="cb24-71"><a href="#cb24-71" aria-hidden="true" tabindex="-1"></a>metrics_to_plot <span class="op">=</span> [<span class="st">'accuracy'</span>, <span class="st">'ppv'</span>, <span class="st">'fnr'</span>, <span class="st">'fpr'</span>]</span>
+<span id="cb24-72"><a href="#cb24-72" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">10</span>))</span>
+<span id="cb24-73"><a href="#cb24-73" aria-hidden="true" tabindex="-1"></a>axes <span class="op">=</span> axes.flatten()</span>
+<span id="cb24-74"><a href="#cb24-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-75"><a href="#cb24-75" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, metric <span class="kw">in</span> <span class="bu">enumerate</span>(metrics_to_plot):</span>
+<span id="cb24-76"><a href="#cb24-76" aria-hidden="true" tabindex="-1"></a>    metric_values <span class="op">=</span> [results[group][metric] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">sorted</span>(results.keys())]</span>
+<span id="cb24-77"><a href="#cb24-77" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-78"><a href="#cb24-78" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> axes[i]</span>
+<span id="cb24-79"><a href="#cb24-79" aria-hidden="true" tabindex="-1"></a>    ax.bar(<span class="bu">range</span>(<span class="bu">len</span>(results)), metric_values)</span>
+<span id="cb24-80"><a href="#cb24-80" aria-hidden="true" tabindex="-1"></a>    ax.set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(results)))</span>
+<span id="cb24-81"><a href="#cb24-81" aria-hidden="true" tabindex="-1"></a>    ax.set_xticklabels([group_labels[<span class="bu">int</span>(g)] <span class="cf">for</span> g <span class="kw">in</span> <span class="bu">sorted</span>(results.keys())], rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span>
+<span id="cb24-82"><a href="#cb24-82" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"</span><span class="sc">{</span>metric<span class="sc">.</span>upper()<span class="sc">}</span><span class="ss"> by Racial Group"</span>)</span>
+<span id="cb24-83"><a href="#cb24-83" aria-hidden="true" tabindex="-1"></a>    ax.axhline(overall_metrics[metric], color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="st">'Overall'</span>)</span>
+<span id="cb24-84"><a href="#cb24-84" aria-hidden="true" tabindex="-1"></a>    ax.legend()</span>
+<span id="cb24-85"><a href="#cb24-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-86"><a href="#cb24-86" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb24-87"><a href="#cb24-87" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>           Count          Accuracy               PPV              FNR  \
+1        27632.0   0.8286 (82.86%)   0.7972 (79.72%)  0.1402 (14.02%)   
+2         4786.0   0.8191 (81.91%)   0.7548 (75.48%)  0.1431 (14.31%)   
+3          106.0   0.8396 (83.96%)   0.7969 (79.69%)   0.0727 (7.27%)   
+5           35.0   0.8857 (88.57%)   0.8125 (81.25%)   0.0714 (7.14%)   
+6         3471.0   0.7862 (78.62%)   0.7247 (72.47%)   0.0858 (8.58%)   
+7           13.0  1.0000 (100.00%)  1.0000 (100.00%)   0.0000 (0.00%)   
+8         2208.0   0.8175 (81.75%)   0.7398 (73.98%)   0.0930 (9.30%)   
+9         1143.0   0.8443 (84.43%)   0.7447 (74.47%)  0.1422 (14.22%)   
+Overall  39394.0   0.8237 (82.37%)   0.7802 (78.02%)  0.1327 (13.27%)   
+
+                     FPR  
+1        0.1999 (19.99%)  
+2        0.2094 (20.94%)  
+3        0.2549 (25.49%)  
+5        0.1429 (14.29%)  
+6        0.3385 (33.85%)  
+7         0.0000 (0.00%)  
+8        0.2537 (25.37%)  
+9        0.1633 (16.33%)  
+Overall  0.2146 (21.46%)  </code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="auditing-bias_files/figure-html/cell-16-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Above I calculate the overall accuracy, PPV, FNR, and FPR for my model on the test data. I also break down these metrics by racial group to identify potential disparities, showing a summary table showing all metrics for each group and visualizing the disparities across groups with bar charts. We see that the FNR is significantly higher for white, black, and two or more races individuals, meaning that the model is more likely to incorrectly classify employed individuals as unemployed for these groups. Further, the FPR is much higher for asian individuals, meaning that the model is more likely to incorrectly classify unemployed individuals as employed for asian individuals. We see that overall, the false positive rates are higher than the false negative rates, meaning that the model is more likely to incorrectly classify unemployed individuals as employed. Overall, however, the accuracy and PPV by group are pretty fixed around the overall rates.</p>
+</section>
+</section>
+<section id="calibration-error-rate-balance-and-statistical-parity" class="level2">
+<h2 class="anchored" data-anchor-id="calibration-error-rate-balance-and-statistical-parity">Calibration, Error Rate Balance, and Statistical Parity</h2>
+<p>Next we will delve into 3 specific measures of bias: calibration, error rate balance, and statistical parity. To quickly summarize the measures: - Calibration: A score is well-calibrated if it reflects the same likelihood of recidivism irrespective of the individuals’ group membership. Calibration in this context is similar to saying “free from predictive bias.” - Statistical parity: A score S = S(x) satisfies statistical parity if the proportion of individuals classified as high-risk is the same for each group. Are group-specific false positive rates equal to group-specific false negative rates? - Error rate balance: A score S = S(x) satisfies error rate balance if the false positive and false negative error rates are equal across groups.</p>
+<p>Let’s see how our model performs on these measures. For each measure of bias, I calculate the important measures by group and overall. For the calibration analysis, the PPV by group is crucial: a well-calibrated model should have similar PPV across all groups. For the error rate balance, it is most important to look at the FPR and FNR by group: these should be similar across all groups. For the statistical parity, the prediction rates should be similar across groups.</p>
+<div id="cell-38" class="cell" data-execution_count="104">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate all bias measures</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_bias_measures(df):</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    groups <span class="op">=</span> <span class="bu">sorted</span>(df[<span class="st">'group'</span>].unique())</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> {}</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Overall positive prediction rate</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>    overall_ppr <span class="op">=</span> df[<span class="st">'pred'</span>].mean()</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> group <span class="kw">in</span> groups:</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>        group_data <span class="op">=</span> df[df[<span class="st">'group'</span>] <span class="op">==</span> group]</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Skip groups with insufficient data</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(group_data) <span class="op">&lt;</span> <span class="dv">10</span>:</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 1. Calibration: PPV should be similar across groups</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># this means PPV should be similar across groups</span></span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>        pred_positive <span class="op">=</span> group_data[group_data[<span class="st">'pred'</span>] <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="bu">len</span>(pred_positive) <span class="op">&gt;</span> <span class="dv">0</span>:</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>            calibration <span class="op">=</span> pred_positive[<span class="st">'true'</span>].mean()  <span class="co">#PPV</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>            calibration <span class="op">=</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>        <span class="co"># 3. Statistical Parity: FPR and FNR should be similar across groups</span></span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>        stat_parity <span class="op">=</span> group_data[<span class="st">'pred'</span>].mean()</span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>        results[group] <span class="op">=</span> {</span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>            <span class="st">'count'</span>: <span class="bu">len</span>(group_data),</span>
+<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>            <span class="st">'calibration'</span>: calibration,</span>
+<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>            <span class="st">'stat_parity'</span>: stat_parity,</span>
+<span id="cb26-31"><a href="#cb26-31" aria-hidden="true" tabindex="-1"></a>            <span class="st">'stat_parity_ratio'</span>: stat_parity <span class="op">/</span> overall_ppr <span class="cf">if</span> overall_ppr <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="bu">float</span>(<span class="st">'nan'</span>)</span>
+<span id="cb26-32"><a href="#cb26-32" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb26-33"><a href="#cb26-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb26-34"><a href="#cb26-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> results, overall_ppr</span>
+<span id="cb26-35"><a href="#cb26-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-36"><a href="#cb26-36" aria-hidden="true" tabindex="-1"></a><span class="co"># get bias measures</span></span>
+<span id="cb26-37"><a href="#cb26-37" aria-hidden="true" tabindex="-1"></a>bias_results, overall_ppr <span class="op">=</span> calculate_bias_measures(audit_df)</span>
+<span id="cb26-38"><a href="#cb26-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-39"><a href="#cb26-39" aria-hidden="true" tabindex="-1"></a><span class="co"># Create summary tables</span></span>
+<span id="cb26-40"><a href="#cb26-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">1. Calibration Analysis (PPV by group)"</span>)</span>
+<span id="cb26-41"><a href="#cb26-41" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"A well-calibrated model should have similar PPV across all groups"</span>)</span>
+<span id="cb26-42"><a href="#cb26-42" aria-hidden="true" tabindex="-1"></a>calibration_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb26-43"><a href="#cb26-43" aria-hidden="true" tabindex="-1"></a>    group: {</span>
+<span id="cb26-44"><a href="#cb26-44" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Count'</span>: bias_results[group][<span class="st">'count'</span>],</span>
+<span id="cb26-45"><a href="#cb26-45" aria-hidden="true" tabindex="-1"></a>        <span class="st">'PPV (Calibration)'</span>: bias_results[group][<span class="st">'calibration'</span>],</span>
+<span id="cb26-46"><a href="#cb26-46" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Overall PPV'</span>: overall_metrics[<span class="st">'ppv'</span>],</span>
+<span id="cb26-47"><a href="#cb26-47" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Difference'</span>: bias_results[group][<span class="st">'calibration'</span>] <span class="op">-</span> overall_metrics[<span class="st">'ppv'</span>]</span>
+<span id="cb26-48"><a href="#cb26-48" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">for</span> group <span class="kw">in</span> bias_results</span>
+<span id="cb26-49"><a href="#cb26-49" aria-hidden="true" tabindex="-1"></a>}).T</span>
+<span id="cb26-50"><a href="#cb26-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-51"><a href="#cb26-51" aria-hidden="true" tabindex="-1"></a><span class="co"># Format as percentages</span></span>
+<span id="cb26-52"><a href="#cb26-52" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> [<span class="st">'PPV (Calibration)'</span>, <span class="st">'Overall PPV'</span>, <span class="st">'Difference'</span>]:</span>
+<span id="cb26-53"><a href="#cb26-53" aria-hidden="true" tabindex="-1"></a>    calibration_df[col] <span class="op">=</span> calibration_df[col].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>x<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb26-54"><a href="#cb26-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-55"><a href="#cb26-55" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(calibration_df)</span>
+<span id="cb26-56"><a href="#cb26-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-57"><a href="#cb26-57" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">2. Error Rate Balance Analysis"</span>)</span>
+<span id="cb26-58"><a href="#cb26-58" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Error rate balance requires similar FPR and FNR across all groups"</span>)</span>
+<span id="cb26-59"><a href="#cb26-59" aria-hidden="true" tabindex="-1"></a>error_balance_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb26-60"><a href="#cb26-60" aria-hidden="true" tabindex="-1"></a>    group: {</span>
+<span id="cb26-61"><a href="#cb26-61" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Count'</span>: bias_results[group][<span class="st">'count'</span>],</span>
+<span id="cb26-62"><a href="#cb26-62" aria-hidden="true" tabindex="-1"></a>        <span class="st">'FPR'</span>: results[group][<span class="st">'fpr'</span>],</span>
+<span id="cb26-63"><a href="#cb26-63" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Overall FPR'</span>: overall_metrics[<span class="st">'fpr'</span>],</span>
+<span id="cb26-64"><a href="#cb26-64" aria-hidden="true" tabindex="-1"></a>        <span class="st">'FPR Difference'</span>: results[group][<span class="st">'fpr'</span>] <span class="op">-</span> overall_metrics[<span class="st">'fpr'</span>],</span>
+<span id="cb26-65"><a href="#cb26-65" aria-hidden="true" tabindex="-1"></a>        <span class="st">'FNR'</span>: results[group][<span class="st">'fnr'</span>],</span>
+<span id="cb26-66"><a href="#cb26-66" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Overall FNR'</span>: overall_metrics[<span class="st">'fnr'</span>],</span>
+<span id="cb26-67"><a href="#cb26-67" aria-hidden="true" tabindex="-1"></a>        <span class="st">'FNR Difference'</span>: results[group][<span class="st">'fnr'</span>] <span class="op">-</span> overall_metrics[<span class="st">'fnr'</span>]</span>
+<span id="cb26-68"><a href="#cb26-68" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">for</span> group <span class="kw">in</span> bias_results</span>
+<span id="cb26-69"><a href="#cb26-69" aria-hidden="true" tabindex="-1"></a>}).T</span>
+<span id="cb26-70"><a href="#cb26-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-71"><a href="#cb26-71" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> [<span class="st">'FPR'</span>, <span class="st">'Overall FPR'</span>, <span class="st">'FPR Difference'</span>, <span class="st">'FNR'</span>, <span class="st">'Overall FNR'</span>, <span class="st">'FNR Difference'</span>]:</span>
+<span id="cb26-72"><a href="#cb26-72" aria-hidden="true" tabindex="-1"></a>    error_balance_df[col] <span class="op">=</span> error_balance_df[col].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>x<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb26-73"><a href="#cb26-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-74"><a href="#cb26-74" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(error_balance_df)</span>
+<span id="cb26-75"><a href="#cb26-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-76"><a href="#cb26-76" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">3. Statistical Parity Analysis"</span>)</span>
+<span id="cb26-77"><a href="#cb26-77" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Statistical parity requires similar prediction rates across all groups"</span>)</span>
+<span id="cb26-78"><a href="#cb26-78" aria-hidden="true" tabindex="-1"></a>stat_parity_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb26-79"><a href="#cb26-79" aria-hidden="true" tabindex="-1"></a>    group: {</span>
+<span id="cb26-80"><a href="#cb26-80" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Count'</span>: bias_results[group][<span class="st">'count'</span>],</span>
+<span id="cb26-81"><a href="#cb26-81" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Prediction Rate'</span>: bias_results[group][<span class="st">'stat_parity'</span>],</span>
+<span id="cb26-82"><a href="#cb26-82" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Overall Rate'</span>: overall_ppr,</span>
+<span id="cb26-83"><a href="#cb26-83" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Difference'</span>: bias_results[group][<span class="st">'stat_parity'</span>] <span class="op">-</span> overall_ppr,</span>
+<span id="cb26-84"><a href="#cb26-84" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Ratio'</span>: bias_results[group][<span class="st">'stat_parity_ratio'</span>]</span>
+<span id="cb26-85"><a href="#cb26-85" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">for</span> group <span class="kw">in</span> bias_results</span>
+<span id="cb26-86"><a href="#cb26-86" aria-hidden="true" tabindex="-1"></a>}).T</span>
+<span id="cb26-87"><a href="#cb26-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-88"><a href="#cb26-88" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> col <span class="kw">in</span> [<span class="st">'Prediction Rate'</span>, <span class="st">'Overall Rate'</span>, <span class="st">'Difference'</span>]:</span>
+<span id="cb26-89"><a href="#cb26-89" aria-hidden="true" tabindex="-1"></a>    stat_parity_df[col] <span class="op">=</span> stat_parity_df[col].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"</span><span class="sc">{</span>x<span class="sc">:.4f}</span><span class="ss"> (</span><span class="sc">{</span>x<span class="op">*</span><span class="dv">100</span><span class="sc">:.2f}</span><span class="ss">%)"</span>)</span>
+<span id="cb26-90"><a href="#cb26-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-91"><a href="#cb26-91" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(stat_parity_df)</span>
+<span id="cb26-92"><a href="#cb26-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-93"><a href="#cb26-93" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the three fairness criteria</span></span>
+<span id="cb26-94"><a href="#cb26-94" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">3</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="dv">14</span>, <span class="dv">15</span>))</span>
+<span id="cb26-95"><a href="#cb26-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-96"><a href="#cb26-96" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Calibration</span></span>
+<span id="cb26-97"><a href="#cb26-97" aria-hidden="true" tabindex="-1"></a>calibration_values <span class="op">=</span> [bias_results[group][<span class="st">'calibration'</span>] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())]</span>
+<span id="cb26-98"><a href="#cb26-98" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].bar(<span class="bu">range</span>(<span class="bu">len</span>(bias_results)), calibration_values)</span>
+<span id="cb26-99"><a href="#cb26-99" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(bias_results)))</span>
+<span id="cb26-100"><a href="#cb26-100" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xticklabels([group_labels[<span class="bu">int</span>(g)] <span class="cf">for</span> g <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())], rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span>
+<span id="cb26-101"><a href="#cb26-101" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Calibration (PPV) by Racial Group"</span>)</span>
+<span id="cb26-102"><a href="#cb26-102" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axhline(overall_metrics[<span class="st">'ppv'</span>], color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="st">'Overall PPV'</span>)</span>
+<span id="cb26-103"><a href="#cb26-103" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylim(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb26-104"><a href="#cb26-104" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend()</span>
+<span id="cb26-105"><a href="#cb26-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-106"><a href="#cb26-106" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Error Rate Balance</span></span>
+<span id="cb26-107"><a href="#cb26-107" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> np.arange(<span class="bu">len</span>(bias_results))</span>
+<span id="cb26-108"><a href="#cb26-108" aria-hidden="true" tabindex="-1"></a>width <span class="op">=</span> <span class="fl">0.35</span></span>
+<span id="cb26-109"><a href="#cb26-109" aria-hidden="true" tabindex="-1"></a>fpr_values <span class="op">=</span> [results[group][<span class="st">'fpr'</span>] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())]</span>
+<span id="cb26-110"><a href="#cb26-110" aria-hidden="true" tabindex="-1"></a>fnr_values <span class="op">=</span> [results[group][<span class="st">'fnr'</span>] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())]</span>
+<span id="cb26-111"><a href="#cb26-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-112"><a href="#cb26-112" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].bar(x <span class="op">-</span> width<span class="op">/</span><span class="dv">2</span>, fpr_values, width, label<span class="op">=</span><span class="st">'FPR'</span>)</span>
+<span id="cb26-113"><a href="#cb26-113" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].bar(x <span class="op">+</span> width<span class="op">/</span><span class="dv">2</span>, fnr_values, width, label<span class="op">=</span><span class="st">'FNR'</span>)</span>
+<span id="cb26-114"><a href="#cb26-114" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xticks(x)</span>
+<span id="cb26-115"><a href="#cb26-115" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_xticklabels([group_labels[<span class="bu">int</span>(g)] <span class="cf">for</span> g <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())], rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span>
+<span id="cb26-116"><a href="#cb26-116" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Error Rates by Racial Group"</span>)</span>
+<span id="cb26-117"><a href="#cb26-117" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axhline(overall_metrics[<span class="st">'fpr'</span>], color<span class="op">=</span><span class="st">'blue'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="st">'Overall FPR'</span>)</span>
+<span id="cb26-118"><a href="#cb26-118" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axhline(overall_metrics[<span class="st">'fnr'</span>], color<span class="op">=</span><span class="st">'orange'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="st">'Overall FNR'</span>)</span>
+<span id="cb26-119"><a href="#cb26-119" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="dv">0</span>, <span class="bu">max</span>(<span class="bu">max</span>(fpr_values), <span class="bu">max</span>(fnr_values)) <span class="op">*</span> <span class="fl">1.2</span>)</span>
+<span id="cb26-120"><a href="#cb26-120" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend()</span>
+<span id="cb26-121"><a href="#cb26-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-122"><a href="#cb26-122" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Statistical Parity</span></span>
+<span id="cb26-123"><a href="#cb26-123" aria-hidden="true" tabindex="-1"></a>stat_parity_values <span class="op">=</span> [bias_results[group][<span class="st">'stat_parity'</span>] <span class="cf">for</span> group <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())]</span>
+<span id="cb26-124"><a href="#cb26-124" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].bar(<span class="bu">range</span>(<span class="bu">len</span>(bias_results)), stat_parity_values)</span>
+<span id="cb26-125"><a href="#cb26-125" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(bias_results)))</span>
+<span id="cb26-126"><a href="#cb26-126" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_xticklabels([group_labels[<span class="bu">int</span>(g)] <span class="cf">for</span> g <span class="kw">in</span> <span class="bu">sorted</span>(bias_results.keys())], rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">'right'</span>)</span>
+<span id="cb26-127"><a href="#cb26-127" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_title(<span class="st">"Statistical Parity (Prediction Rate) by Racial Group"</span>)</span>
+<span id="cb26-128"><a href="#cb26-128" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].axhline(overall_ppr, color<span class="op">=</span><span class="st">'red'</span>, linestyle<span class="op">=</span><span class="st">'--'</span>, label<span class="op">=</span><span class="st">'Overall Prediction Rate'</span>)</span>
+<span id="cb26-129"><a href="#cb26-129" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_ylim(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb26-130"><a href="#cb26-130" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].legend()</span>
+<span id="cb26-131"><a href="#cb26-131" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-132"><a href="#cb26-132" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb26-133"><a href="#cb26-133" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb26-134"><a href="#cb26-134" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-135"><a href="#cb26-135" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary</span></span>
+<span id="cb26-136"><a href="#cb26-136" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">--- Summary of Fairness Criteria ---"</span>)</span>
+<span id="cb26-137"><a href="#cb26-137" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"1. Calibration: Is PPV similar across groups?"</span>)</span>
+<span id="cb26-138"><a href="#cb26-138" aria-hidden="true" tabindex="-1"></a>calibration_diffs <span class="op">=</span> [<span class="bu">abs</span>(bias_results[group][<span class="st">'calibration'</span>] <span class="op">-</span> overall_metrics[<span class="st">'ppv'</span>]) <span class="cf">for</span> group <span class="kw">in</span> bias_results]</span>
+<span id="cb26-139"><a href="#cb26-139" aria-hidden="true" tabindex="-1"></a>max_calibration_diff <span class="op">=</span> <span class="bu">max</span>(calibration_diffs)</span>
+<span id="cb26-140"><a href="#cb26-140" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> max_calibration_diff <span class="op">&lt;</span> <span class="fl">0.05</span>:</span>
+<span id="cb26-141"><a href="#cb26-141" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"✓ Model appears to be well-calibrated (max PPV difference &lt; 5%)"</span>)</span>
+<span id="cb26-142"><a href="#cb26-142" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb26-143"><a href="#cb26-143" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"✗ Model shows calibration disparities (max PPV difference: </span><span class="sc">{:.2f}</span><span class="st">%)"</span>.<span class="bu">format</span>(max_calibration_diff<span class="op">*</span><span class="dv">100</span>))</span>
+<span id="cb26-144"><a href="#cb26-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-145"><a href="#cb26-145" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">2. Error Rate Balance: Are FPR and FNR similar across groups?"</span>)</span>
+<span id="cb26-146"><a href="#cb26-146" aria-hidden="true" tabindex="-1"></a>fpr_diffs <span class="op">=</span> [<span class="bu">abs</span>(results[group][<span class="st">'fpr'</span>] <span class="op">-</span> overall_metrics[<span class="st">'fpr'</span>]) <span class="cf">for</span> group <span class="kw">in</span> bias_results]</span>
+<span id="cb26-147"><a href="#cb26-147" aria-hidden="true" tabindex="-1"></a>fnr_diffs <span class="op">=</span> [<span class="bu">abs</span>(results[group][<span class="st">'fnr'</span>] <span class="op">-</span> overall_metrics[<span class="st">'fnr'</span>]) <span class="cf">for</span> group <span class="kw">in</span> bias_results]</span>
+<span id="cb26-148"><a href="#cb26-148" aria-hidden="true" tabindex="-1"></a>max_fpr_diff <span class="op">=</span> <span class="bu">max</span>(fpr_diffs)</span>
+<span id="cb26-149"><a href="#cb26-149" aria-hidden="true" tabindex="-1"></a>max_fnr_diff <span class="op">=</span> <span class="bu">max</span>(fnr_diffs)</span>
+<span id="cb26-150"><a href="#cb26-150" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> max_fpr_diff <span class="op">&lt;</span> <span class="fl">0.05</span> <span class="kw">and</span> max_fnr_diff <span class="op">&lt;</span> <span class="fl">0.05</span>:</span>
+<span id="cb26-151"><a href="#cb26-151" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"✓ Model satisfies approximate error rate balance (max differences &lt; 5%)"</span>)</span>
+<span id="cb26-152"><a href="#cb26-152" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb26-153"><a href="#cb26-153" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"✗ Model shows error rate disparities:"</span>)</span>
+<span id="cb26-154"><a href="#cb26-154" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - Max FPR difference: </span><span class="sc">{:.2f}</span><span class="st">%"</span>.<span class="bu">format</span>(max_fpr_diff<span class="op">*</span><span class="dv">100</span>))</span>
+<span id="cb26-155"><a href="#cb26-155" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"  - Max FNR difference: </span><span class="sc">{:.2f}</span><span class="st">%"</span>.<span class="bu">format</span>(max_fnr_diff<span class="op">*</span><span class="dv">100</span>))</span>
+<span id="cb26-156"><a href="#cb26-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-157"><a href="#cb26-157" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">3. Statistical Parity: Is prediction rate similar across groups?"</span>)</span>
+<span id="cb26-158"><a href="#cb26-158" aria-hidden="true" tabindex="-1"></a>stat_parity_diffs <span class="op">=</span> [<span class="bu">abs</span>(bias_results[group][<span class="st">'stat_parity'</span>] <span class="op">-</span> overall_ppr) <span class="cf">for</span> group <span class="kw">in</span> bias_results]</span>
+<span id="cb26-159"><a href="#cb26-159" aria-hidden="true" tabindex="-1"></a>max_stat_parity_diff <span class="op">=</span> <span class="bu">max</span>(stat_parity_diffs)</span>
+<span id="cb26-160"><a href="#cb26-160" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> max_stat_parity_diff <span class="op">&lt;</span> <span class="fl">0.05</span>:</span>
+<span id="cb26-161"><a href="#cb26-161" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"✓ Model satisfies approximate statistical parity (max difference &lt; 5%)"</span>)</span>
+<span id="cb26-162"><a href="#cb26-162" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb26-163"><a href="#cb26-163" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"✗ Model shows statistical parity disparities (max difference: </span><span class="sc">{:.2f}</span><span class="st">%)"</span>.<span class="bu">format</span>(max_stat_parity_diff<span class="op">*</span><span class="dv">100</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+1. Calibration Analysis (PPV by group)
+A well-calibrated model should have similar PPV across all groups
+     Count PPV (Calibration)      Overall PPV        Difference
+1  27632.0   0.7972 (79.72%)  0.7802 (78.02%)    0.0170 (1.70%)
+2   4786.0   0.7548 (75.48%)  0.7802 (78.02%)  -0.0254 (-2.54%)
+3    106.0   0.7969 (79.69%)  0.7802 (78.02%)    0.0167 (1.67%)
+5     35.0   0.8125 (81.25%)  0.7802 (78.02%)    0.0323 (3.23%)
+6   3471.0   0.7247 (72.47%)  0.7802 (78.02%)  -0.0555 (-5.55%)
+7     13.0  1.0000 (100.00%)  0.7802 (78.02%)   0.2198 (21.98%)
+8   2208.0   0.7398 (73.98%)  0.7802 (78.02%)  -0.0404 (-4.04%)
+9   1143.0   0.7447 (74.47%)  0.7802 (78.02%)  -0.0355 (-3.55%)
+
+2. Error Rate Balance Analysis
+Error rate balance requires similar FPR and FNR across all groups
+     Count              FPR      Overall FPR     FPR Difference  \
+1  27632.0  0.1999 (19.99%)  0.2146 (21.46%)   -0.0147 (-1.47%)   
+2   4786.0  0.2094 (20.94%)  0.2146 (21.46%)   -0.0052 (-0.52%)   
+3    106.0  0.2549 (25.49%)  0.2146 (21.46%)     0.0403 (4.03%)   
+5     35.0  0.1429 (14.29%)  0.2146 (21.46%)   -0.0718 (-7.18%)   
+6   3471.0  0.3385 (33.85%)  0.2146 (21.46%)    0.1238 (12.38%)   
+7     13.0   0.0000 (0.00%)  0.2146 (21.46%)  -0.2146 (-21.46%)   
+8   2208.0  0.2537 (25.37%)  0.2146 (21.46%)     0.0390 (3.90%)   
+9   1143.0  0.1633 (16.33%)  0.2146 (21.46%)   -0.0514 (-5.14%)   
+
+               FNR      Overall FNR     FNR Difference  
+1  0.1402 (14.02%)  0.1327 (13.27%)     0.0075 (0.75%)  
+2  0.1431 (14.31%)  0.1327 (13.27%)     0.0104 (1.04%)  
+3   0.0727 (7.27%)  0.1327 (13.27%)   -0.0600 (-6.00%)  
+5   0.0714 (7.14%)  0.1327 (13.27%)   -0.0613 (-6.13%)  
+6   0.0858 (8.58%)  0.1327 (13.27%)   -0.0469 (-4.69%)  
+7   0.0000 (0.00%)  0.1327 (13.27%)  -0.1327 (-13.27%)  
+8   0.0930 (9.30%)  0.1327 (13.27%)   -0.0397 (-3.97%)  
+9  0.1422 (14.22%)  0.1327 (13.27%)     0.0094 (0.94%)  
+
+3. Statistical Parity Analysis
+Statistical parity requires similar prediction rates across all groups
+     Count  Prediction Rate     Overall Rate         Difference     Ratio
+1  27632.0  0.5150 (51.50%)  0.5199 (51.99%)   -0.0048 (-0.48%)  0.990705
+2   4786.0  0.4875 (48.75%)  0.5199 (51.99%)   -0.0324 (-3.24%)  0.937699
+3    106.0  0.6038 (60.38%)  0.5199 (51.99%)     0.0839 (8.39%)  1.161436
+5     35.0  0.4571 (45.71%)  0.5199 (51.99%)   -0.0627 (-6.27%)  0.879373
+6   3471.0  0.6226 (62.26%)  0.5199 (51.99%)    0.1027 (10.27%)  1.197627
+7     13.0  0.3846 (38.46%)  0.5199 (51.99%)  -0.1352 (-13.52%)  0.739857
+8   2208.0  0.5430 (54.30%)  0.5199 (51.99%)     0.0232 (2.32%)  1.044579
+9   1143.0  0.4112 (41.12%)  0.5199 (51.99%)  -0.1087 (-10.87%)  0.790994</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="auditing-bias_files/figure-html/cell-17-output-2.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+--- Summary of Fairness Criteria ---
+1. Calibration: Is PPV similar across groups?
+✗ Model shows calibration disparities (max PPV difference: 21.98%)
+
+2. Error Rate Balance: Are FPR and FNR similar across groups?
+✗ Model shows error rate disparities:
+  - Max FPR difference: 21.46%
+  - Max FNR difference: 13.27%
+
+3. Statistical Parity: Is prediction rate similar across groups?
+✗ Model shows statistical parity disparities (max difference: 13.52%)</code></pre>
+</div>
+</div>
+<p>As shown by the summary of the fairness criteria, my model does not satisfy all three criteria simultaneously. I calculate the max difference for each criterion (the difference between the group and overall) and found that the model shows disparities in all 3 aspects. The max FPR and PPV difference were the largest, 21.46% and 21.98% respectively.</p>
+<p>The calibration disparity of nearly 22% indicates that when my model predicts employment for certain racial groups, its confidence is significantly misaligned with actual outcomes. Similarly, the error rate imbalances reveal that the model’s mistakes are not distributed equitably, with some groups experiencing false positives at rates over 21 percentage points higher than others. The statistical parity disparity of 13.52% further demonstrates that the model’s predictions themselves are not demographically balanced.</p>
+<section id="recreating-figure-5-from-chouldechova-2017" class="level3">
+<h3 class="anchored" data-anchor-id="recreating-figure-5-from-chouldechova-2017">Recreating Figure 5 from Chouldechova (2017)</h3>
+<div id="cell-41" class="cell" data-execution_count="105">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a figure showing feasible (FNR, FPR) combinations</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.patches <span class="im">import</span> Polygon</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculates feasible FPR given FNR, prevalence, and PPV</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calculate_feasible_fpr(fnr, prevalence, ppv):</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Based on the relationship: PPV = (prevalence * (1-FNR)) / (prevalence * (1-FNR) + (1-prevalence) * FPR)</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Solving for FPR: FPR = (prevalence * (1-FNR) * (1-PPV)) / ((1-prevalence) * PPV)</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> ppv <span class="op">==</span> <span class="dv">1</span>:  <span class="co"># Handle edge case</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (prevalence <span class="op">*</span> (<span class="dv">1</span><span class="op">-</span>fnr) <span class="op">*</span> (<span class="dv">1</span><span class="op">-</span>ppv)) <span class="op">/</span> ((<span class="dv">1</span><span class="op">-</span>prevalence) <span class="op">*</span> ppv)</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="co"># group 1 is White group and group 2 is Black group</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>white_group_data <span class="op">=</span> audit_df[audit_df[<span class="st">'group'</span>] <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>black_group_data <span class="op">=</span> audit_df[audit_df[<span class="st">'group'</span>] <span class="op">==</span> <span class="dv">2</span>]</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate prevalence for each group</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>prevalence_white <span class="op">=</span> white_group_data[<span class="st">'true'</span>].mean()</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>prevalence_black <span class="op">=</span> black_group_data[<span class="st">'true'</span>].mean()</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate observed FNR, FPR, and PPV for each group</span></span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>white_metrics <span class="op">=</span> calculate_group_metrics(white_group_data)</span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>black_metrics <span class="op">=</span> calculate_group_metrics(black_group_data)</span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a>fnr_white <span class="op">=</span> white_metrics[<span class="st">'fnr'</span>]</span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a>fpr_white <span class="op">=</span> white_metrics[<span class="st">'fpr'</span>]</span>
+<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a>ppv_white <span class="op">=</span> white_metrics[<span class="st">'ppv'</span>]</span>
+<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a>fnr_black <span class="op">=</span> black_metrics[<span class="st">'fnr'</span>]</span>
+<span id="cb29-31"><a href="#cb29-31" aria-hidden="true" tabindex="-1"></a>fpr_black <span class="op">=</span> black_metrics[<span class="st">'fpr'</span>]</span>
+<span id="cb29-32"><a href="#cb29-32" aria-hidden="true" tabindex="-1"></a>ppv_black <span class="op">=</span> black_metrics[<span class="st">'ppv'</span>]</span>
+<span id="cb29-33"><a href="#cb29-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-34"><a href="#cb29-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Create the figure</span></span>
+<span id="cb29-35"><a href="#cb29-35" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">8</span>))</span>
+<span id="cb29-36"><a href="#cb29-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-37"><a href="#cb29-37" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the observed points</span></span>
+<span id="cb29-38"><a href="#cb29-38" aria-hidden="true" tabindex="-1"></a>plt.scatter(fnr_white, fpr_white, color<span class="op">=</span><span class="st">'blue'</span>, s<span class="op">=</span><span class="dv">100</span>, label<span class="op">=</span><span class="ss">f'White (Group 1): FNR=</span><span class="sc">{</span>fnr_white<span class="sc">:.3f}</span><span class="ss">, FPR=</span><span class="sc">{</span>fpr_white<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="cb29-39"><a href="#cb29-39" aria-hidden="true" tabindex="-1"></a>plt.scatter(fnr_black, fpr_black, color<span class="op">=</span><span class="st">'red'</span>, s<span class="op">=</span><span class="dv">100</span>, label<span class="op">=</span><span class="ss">f'Black (Group 2): FNR=</span><span class="sc">{</span>fnr_black<span class="sc">:.3f}</span><span class="ss">, FPR=</span><span class="sc">{</span>fpr_black<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="cb29-40"><a href="#cb29-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-41"><a href="#cb29-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate feasible (FNR, FPR) combinations for White individuals</span></span>
+<span id="cb29-42"><a href="#cb29-42" aria-hidden="true" tabindex="-1"></a>fnr_range <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1000</span>)</span>
+<span id="cb29-43"><a href="#cb29-43" aria-hidden="true" tabindex="-1"></a>fpr_white_feasible <span class="op">=</span> [calculate_feasible_fpr(fnr, prevalence_white, ppv_white) <span class="cf">for</span> fnr <span class="kw">in</span> fnr_range]</span>
+<span id="cb29-44"><a href="#cb29-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-45"><a href="#cb29-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the feasible line for White individuals</span></span>
+<span id="cb29-46"><a href="#cb29-46" aria-hidden="true" tabindex="-1"></a>plt.plot(fnr_range, fpr_white_feasible, color<span class="op">=</span><span class="st">'orange'</span>, linewidth<span class="op">=</span><span class="dv">2</span>, </span>
+<span id="cb29-47"><a href="#cb29-47" aria-hidden="true" tabindex="-1"></a>         label<span class="op">=</span><span class="ss">f'Feasible (FNR, FPR) for White, PPV=</span><span class="sc">{</span>ppv_white<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="cb29-48"><a href="#cb29-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-49"><a href="#cb29-49" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate feasible (FNR, FPR) combinations for Black individuals with PPV equal to White PPV</span></span>
+<span id="cb29-50"><a href="#cb29-50" aria-hidden="true" tabindex="-1"></a>fpr_black_feasible_equal_ppv <span class="op">=</span> [calculate_feasible_fpr(fnr, prevalence_black, ppv_white) <span class="cf">for</span> fnr <span class="kw">in</span> fnr_range]</span>
+<span id="cb29-51"><a href="#cb29-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-52"><a href="#cb29-52" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the feasible line for Black individuals with PPV equal to White PPV</span></span>
+<span id="cb29-53"><a href="#cb29-53" aria-hidden="true" tabindex="-1"></a>plt.plot(fnr_range, fpr_black_feasible_equal_ppv, color<span class="op">=</span><span class="st">'darkgrey'</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb29-54"><a href="#cb29-54" aria-hidden="true" tabindex="-1"></a>         label<span class="op">=</span><span class="ss">f'Feasible (FNR, FPR) for Black, PPV=</span><span class="sc">{</span>ppv_white<span class="sc">:.3f}</span><span class="ss">'</span>)</span>
+<span id="cb29-55"><a href="#cb29-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-56"><a href="#cb29-56" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate and plot feasible regions with varying PPV constraints based on Chouldechova (2017)</span></span>
+<span id="cb29-57"><a href="#cb29-57" aria-hidden="true" tabindex="-1"></a>delta_values <span class="op">=</span> [<span class="fl">0.05</span>, <span class="fl">0.1</span>, <span class="fl">0.125</span>]</span>
+<span id="cb29-58"><a href="#cb29-58" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">'#4682B4'</span>, <span class="st">'#ADD8E6'</span>, <span class="st">'#89CFF0'</span>]</span>
+<span id="cb29-59"><a href="#cb29-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-60"><a href="#cb29-60" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, delta <span class="kw">in</span> <span class="bu">enumerate</span>(delta_values):</span>
+<span id="cb29-61"><a href="#cb29-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Lower bound of PPV</span></span>
+<span id="cb29-62"><a href="#cb29-62" aria-hidden="true" tabindex="-1"></a>    ppv_lower <span class="op">=</span> <span class="bu">max</span>(<span class="dv">0</span>, ppv_white <span class="op">-</span> delta)</span>
+<span id="cb29-63"><a href="#cb29-63" aria-hidden="true" tabindex="-1"></a>    fpr_black_lower <span class="op">=</span> [calculate_feasible_fpr(fnr, prevalence_black, ppv_lower) <span class="cf">for</span> fnr <span class="kw">in</span> fnr_range]</span>
+<span id="cb29-64"><a href="#cb29-64" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-65"><a href="#cb29-65" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Upper bound of PPV</span></span>
+<span id="cb29-66"><a href="#cb29-66" aria-hidden="true" tabindex="-1"></a>    ppv_upper <span class="op">=</span> <span class="bu">min</span>(<span class="dv">1</span>, ppv_white <span class="op">+</span> delta)</span>
+<span id="cb29-67"><a href="#cb29-67" aria-hidden="true" tabindex="-1"></a>    fpr_black_upper <span class="op">=</span> [calculate_feasible_fpr(fnr, prevalence_black, ppv_upper) <span class="cf">for</span> fnr <span class="kw">in</span> fnr_range]</span>
+<span id="cb29-68"><a href="#cb29-68" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-69"><a href="#cb29-69" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create polygon vertices</span></span>
+<span id="cb29-70"><a href="#cb29-70" aria-hidden="true" tabindex="-1"></a>    vertices <span class="op">=</span> [(<span class="dv">0</span>, <span class="dv">0</span>)]  <span class="co"># Start at origin</span></span>
+<span id="cb29-71"><a href="#cb29-71" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(fnr_range)):</span>
+<span id="cb29-72"><a href="#cb29-72" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;=</span> fpr_black_lower[j] <span class="op">&lt;=</span> <span class="dv">1</span>:</span>
+<span id="cb29-73"><a href="#cb29-73" aria-hidden="true" tabindex="-1"></a>            vertices.append((fnr_range[j], fpr_black_lower[j]))</span>
+<span id="cb29-74"><a href="#cb29-74" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-75"><a href="#cb29-75" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Add upper bound in reverse lol</span></span>
+<span id="cb29-76"><a href="#cb29-76" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(fnr_range)<span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>):</span>
+<span id="cb29-77"><a href="#cb29-77" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="dv">0</span> <span class="op">&lt;=</span> fpr_black_upper[j] <span class="op">&lt;=</span> <span class="dv">1</span>:</span>
+<span id="cb29-78"><a href="#cb29-78" aria-hidden="true" tabindex="-1"></a>            vertices.append((fnr_range[j], fpr_black_upper[j]))</span>
+<span id="cb29-79"><a href="#cb29-79" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-80"><a href="#cb29-80" aria-hidden="true" tabindex="-1"></a>    vertices.append((<span class="dv">0</span>, <span class="dv">0</span>))  <span class="co"># Close it</span></span>
+<span id="cb29-81"><a href="#cb29-81" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb29-82"><a href="#cb29-82" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create and add</span></span>
+<span id="cb29-83"><a href="#cb29-83" aria-hidden="true" tabindex="-1"></a>    polygon <span class="op">=</span> Polygon(vertices, closed<span class="op">=</span><span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>, color<span class="op">=</span>colors[i],</span>
+<span id="cb29-84"><a href="#cb29-84" aria-hidden="true" tabindex="-1"></a>                     label<span class="op">=</span><span class="ss">f'Feasible region for |PPV - </span><span class="sc">{</span>ppv_white<span class="sc">:.3f}</span><span class="ss">| &lt; </span><span class="sc">{</span>delta<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb29-85"><a href="#cb29-85" aria-hidden="true" tabindex="-1"></a>    plt.gca().add_patch(polygon)</span>
+<span id="cb29-86"><a href="#cb29-86" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-87"><a href="#cb29-87" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'False Negative Rate (FNR)'</span>)</span>
+<span id="cb29-88"><a href="#cb29-88" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'False Positive Rate (FPR)'</span>)</span>
+<span id="cb29-89"><a href="#cb29-89" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Feasible (FNR, FPR) Combinations by Group'</span>)</span>
+<span id="cb29-90"><a href="#cb29-90" aria-hidden="true" tabindex="-1"></a>plt.xlim(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb29-91"><a href="#cb29-91" aria-hidden="true" tabindex="-1"></a>plt.ylim(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb29-92"><a href="#cb29-92" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb29-93"><a href="#cb29-93" aria-hidden="true" tabindex="-1"></a>plt.legend(loc<span class="op">=</span><span class="st">'upper center'</span>, bbox_to_anchor<span class="op">=</span>(<span class="fl">0.5</span>, <span class="op">-</span><span class="fl">0.15</span>), ncol<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb29-94"><a href="#cb29-94" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb29-95"><a href="#cb29-95" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb29-96"><a href="#cb29-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-97"><a href="#cb29-97" aria-hidden="true" tabindex="-1"></a><span class="co"># Print key metrics for reference</span></span>
+<span id="cb29-98"><a href="#cb29-98" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"White (Group 1): Prevalence=</span><span class="sc">{</span>prevalence_white<span class="sc">:.3f}</span><span class="ss">, PPV=</span><span class="sc">{</span>ppv_white<span class="sc">:.3f}</span><span class="ss">, FNR=</span><span class="sc">{</span>fnr_white<span class="sc">:.3f}</span><span class="ss">, FPR=</span><span class="sc">{</span>fpr_white<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb29-99"><a href="#cb29-99" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Black (Group 2): Prevalence=</span><span class="sc">{</span>prevalence_black<span class="sc">:.3f}</span><span class="ss">, PPV=</span><span class="sc">{</span>ppv_black<span class="sc">:.3f}</span><span class="ss">, FNR=</span><span class="sc">{</span>fnr_black<span class="sc">:.3f}</span><span class="ss">, FPR=</span><span class="sc">{</span>fpr_black<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="auditing-bias_files/figure-html/cell-18-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>White (Group 1): Prevalence=0.478, PPV=0.797, FNR=0.140, FPR=0.200
+Black (Group 2): Prevalence=0.429, PPV=0.755, FNR=0.143, FPR=0.209</code></pre>
+</div>
+</div>
+</section>
+<section id="figure-5-from-chouldechova-2017." class="level3">
+<h3 class="anchored" data-anchor-id="figure-5-from-chouldechova-2017.">Figure 5 from Chouldechova (2017).</h3>
+<p>Plots the observed (FNR, FPR) points for White (Group 1) and Black (Group 2) individuals. The orange line represents the feasible (FNR, FPR) combinations for White individuals with fixed prevalence and PPV. The dark grey line represents the feasible (FNR, FPR) combinations for Black individuals when PPV is set equal to the White PPV. Similarly to Chouldechova, I create nested shaded regions showing feasible (FNR, FPR) combinations for Black individuals when PPV is allowed to vary within different thresholds (δ = 0.05, 0.1, 0.125). The visualization illustrates the impossibility theorem described by Chouldechova - that when prevalence rates differ between groups, it’s mathematically impossible to simultaneously achieve calibration, error rate balance, and statistical parity unless the classifier is perfect. This figure also demonstrates the inherent trade-offs in fairness criteria and explains why achieving all fairness definitions simultaneously is often impossible in real-world scenarios.</p>
+<p>If we desired to tune our classifier threshold so that the false positive rates were equal between groups, how much would we need to change the false negative rate?</p>
+<p>To look into this, we need to examine the feasible (FNR, FPR) combinations shown in our plot, particularly focusing on the dark grey line that represents feasible combinations for Black individuals when their PPV equals the White PPV. Equation 2.6 states the following: - FPR = (p/(1-p)) ((1-PPV)/PPV) (1-FNR)</p>
+<p>Chelnova discusses 3 possible tuning strategies when prevelence differs between groups. The relevant one for us is to allow unequal FNRs to maintain equal PPVs and achieve equal FPRs. Looking at our data above and following this strategy, we can: - Set the target FPR for Black individuals equal to White FPR (0.200) - Set the PPV for Black individuals equal to White PPV (0.797) - Solve for the required FNR for Black individuals</p>
+<p>Rearranging equation 2.6 to solve for FNR, we get: - FNR = 1 - (FPR (1-p) PPV) / (p (1-PPV)) - FNR = 1 - (0.200 (1-0.429) 0.797) / (0.429 (1-0.797)) - FNR = -0.45</p>
+<p>This negative value indicates that it’s mathematically impossible to achieve equal FPRs while maintaining equal PPVs with our current prevalence rates. The equation is telling us we would need a negative FNR, which is not feasible. This aligns with Chouldechova’s discussion - when prevalence rates differ significantly, enforcing equal FPRs while maintaining calibration (equal PPVs) can require extreme and often impossible adjustments to the FNR.</p>
+<p>If we instead relax the equal PPV constraint and use the actual Black PPV (0.755), we can achieve equal FPRs while maintaining the current PPVs: - FNR = 1 - (FPR (1-p) PPV) / (p (1-PPV)) - FNR = 1 - (0.200 (1-0.429) 0.755) / (0.429 (1-0.755)) - FNR = 0.180</p>
+<p>This means we would need to increase the FNR for Black individuals from 0.143 to about 0.180 to achieve equal FPRs while maintaining the current PPVs. This demonstrates the fundamental trade-off highlighted in Chouldechova’s paper: when prevalence differs between groups, we cannot simultaneously achieve equal error rates and equal predictive values.</p>
+</section>
+</section>
+<section id="concluding-discussion" class="level2">
+<h2 class="anchored" data-anchor-id="concluding-discussion">Concluding Discussion</h2>
+<ol type="1">
+<li><p>What groups of people could stand to benefit from a system that is able to predict the label you predicted, such as income or employment status? For example, what kinds of companies might want to buy your model for commercial or governmental use?</p>
+<p>My model could be valuable to companies in both private and public sectors. Recruitment agencies and HR departments might leverage such a system to identify promising candidates and streamline hiring processes. Insurance companies could use similar models to assess risk profiles when offering unemployment insurance. Financial institutions might incorporate employment prediction into their lending algorithms to evaluate loan applicants’ ability to repay (relating to my past blog post which you can find <a href="https://andrewdean1.github.io/posts/blog-2/blog-2.html">here</a>).</p></li>
+<li><p>Based on your bias audit, what could be the impact of deploying your model for large-scale prediction in commercial or governmental settings?</p>
+<p>The deployment of my model in real-world settings could have some far-reaching implications. Our bias audit revealed subtle but still meaningful disparities in error rates across racial groups. While the differences may appear small (e.g., a 0.9 percentage point difference in false positive rates between White and Black individuals), when applied to millions of people, these disparities could affect thousands of individuals unfairly.</p>
+<p>More fundamentally, my analysis of fairness criteria demonstrates the difficulty of simultaneously satisfying multiple definitions of fairness when base rates differ between groups. This presents an ethical dilemma for any organization deploying such systems: which fairness criterion should be prioritized? Should we ensure equal false positive rates to prevent unfair denials of opportunity? Or should we focus on equal false negative rates to ensure no group is disproportionately overlooked?</p></li>
+<li><p>Based on your bias audit, do you feel that your model displays problematic bias? What kinds (calibration, error rate, etc)?</p>
+<p>Based on my bias audit, I believe my model does exhibit problematic bias, though the disparities are pretty subtle. The most concerning bias appears in the error rate balance across racial groups. My analysis showed a difference in false positive rates between White individuals (20.0%) and Black individuals (20.9%). While this 0.9 percentage point difference might seem small, it represents a systematic disadvantage that would affect thousands of people if deployed at scale.</p>
+<p>When I attempted to mathematically equalize these error rates using Chouldechova’s equation 2.6, I discovered that achieving equal FPRs while maintaining equal PPVs would require an impossible negative FNR value. Even when relaxing the equal PPV constraint, equalizing FPRs would require increasing the FNR for Black individuals from 14% to 18% - a significant adjustment that could result in more disparities.</p>
+<p>The model also shows some calibration differences, with PPV values of 79.7% for White individuals versus 75.5% for Black individuals. This 4.2 percentage point difference means that when my model predicts employment for Black individuals, it’s less likely to be correct than when it makes the same prediction for White individuals.</p>
+<p>My visualization of feasible (FNR, FPR) combinations clearly illustrates these trade-offs, showing that the observed disparities are not merely implementation issues but fundamental mathematical constraints given the different prevalence rates between groups (47.8% for White individuals versus 42.9% for Black individuals).</p></li>
+<li><p>Beyond bias, are there other potential problems associated with deploying your model that make you uncomfortable? How would you propose addressing some of these problems?</p>
+<p>Yes, there are some additional aspects beyond bias that make me uncomfortable. First, my model relies heavily on demographic features like age, education, and marital status. While these features have predictive power, they raise questions about reinforcing existing social patterns rather than evaluating individual merit. For example, my decision classifier likely penalizes younger individuals with less education, potentially creating a self-reinforcing cycle where those already disadvantaged in the job market face additional algorithmic barriers. Second, my model’s overall accuracy of 82.4%, while not terrible, still means about one in five predictions is incorrect. For important decisions affecting people’s livelihoods, this error rate is concerning, especially when errors disproportionately affect certain groups. Lastly, my model lacks transparency for the individuals being evaluated. Someone denied an opportunity based on my prediction would have little insight into why they received an unfavorable assessment or what they could do to improve their prospects.</p>
+<p>There are some ways to address these concerns. To start, we could incorprate some human judgment: Deploy the model as a decision support tool rather than an autonomous decision-maker, ensuring human oversight for all consequential decisions. Next, we could continuously monitor and adjust the model by implementing ongoing bias audits across multiple dimensions and adjust the model as needed. A last thought that I have is to potentially introduce stakeholders to the model. This could look like including representatives from potentially adversly affected communities in the design, deployment, and governance of the model.</p></li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
