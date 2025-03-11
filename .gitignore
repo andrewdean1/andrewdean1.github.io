@@ -3,3 +3,6 @@
 *.code-workspace
 /.quarto/
 *.ipynb_checkpoints
+*.csv
+posts/auditing-bias/data/
+posts/auditing-bias/*.csv
