@@ -10,7 +10,7 @@
 <meta name="dcterms.date" content="2025-03-11">
 <meta name="description" content="Predicts employment status. Gives comprehensive audit of bias.">
 
-<title>Auditing Bias – Andrew Dean’s Machine Learning (CSCI 0451) Blog</title>
+<title>Auditing Bias – Andrew Dean’s Machine Learning Blog</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -75,7 +75,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-549806ee2085284f45b00abea8c6df48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-6de787833effe4777a6777a5e05fb578.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-6685f57f7611d95a701d58b4cc6878c0.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -103,24 +103,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
-<style>
-
-      .quarto-title-block .quarto-title-banner h1,
-      .quarto-title-block .quarto-title-banner h2,
-      .quarto-title-block .quarto-title-banner h3,
-      .quarto-title-block .quarto-title-banner h4,
-      .quarto-title-block .quarto-title-banner h5,
-      .quarto-title-block .quarto-title-banner h6
-      {
-        color: white;
-      }
-
-      .quarto-title-block .quarto-title-banner {
-        color: white;
-background-image: url(../../img/gradient.png);
-background-size: cover;
-      }
-</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
@@ -129,15 +111,15 @@ background-size: cover;
 <link rel="stylesheet" href="../../styles.css">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+  <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="../../index.html">
-    <span class="navbar-title">Andrew Dean’s Machine Learning (CSCI 0451) Blog</span>
+    <span class="navbar-title">Andrew Dean’s Machine Learning Blog</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
@@ -145,18 +127,19 @@ background-size: cover;
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+</ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
     <a class="nav-link" href="../../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/"> <i class="bi bi-github" role="img">
-</i> 
-<span class="menu-text"></span></a>
-  </li>  
-  <li class="nav-item compact">
-    <a class="nav-link" href="https://twitter.com"> <i class="bi bi-twitter" role="img">
+    <a class="nav-link" href="https://github.com/andrewdean1"> <i class="bi bi-github" role="img">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -168,48 +151,71 @@ background-size: cover;
     </nav>
 </header>
 <!-- content -->
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
-  <div class="quarto-title-banner page-columns page-full">
-    <div class="quarto-title column-body">
-      <h1 class="title">Auditing Bias</h1>
-                  <div>
-        <div class="description">
-          Predicts employment status. Gives comprehensive audit of bias.
-        </div>
-      </div>
-                </div>
-  </div>
-    
-  
-  <div class="quarto-title-meta">
-
-      <div>
-      <div class="quarto-title-meta-heading">Author</div>
-      <div class="quarto-title-meta-contents">
-               <p>Andrew Dean </p>
-            </div>
-    </div>
-      
-      <div>
-      <div class="quarto-title-meta-heading">Published</div>
-      <div class="quarto-title-meta-contents">
-        <p class="date">March 11, 2025</p>
-      </div>
-    </div>
-    
-      
-    </div>
-    
-  
-  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a>
+  <ul class="collapse">
+  <li><a href="#goal-predict-employment-status-on-the-basis-of-demographics-excluding-race-and-audit-for-racial-bias." id="toc-goal-predict-employment-status-on-the-basis-of-demographics-excluding-race-and-audit-for-racial-bias." class="nav-link" data-scroll-target="#goal-predict-employment-status-on-the-basis-of-demographics-excluding-race-and-audit-for-racial-bias.">GOAL: Predict employment status on the basis of demographics excluding race, and audit for racial bias.</a></li>
+  </ul></li>
+  <li><a href="#basic-descriptives" id="toc-basic-descriptives" class="nav-link" data-scroll-target="#basic-descriptives">Basic Descriptives</a>
+  <ul class="collapse">
+  <li><a href="#building-a-model" id="toc-building-a-model" class="nav-link" data-scroll-target="#building-a-model">Building a model</a></li>
+  <li><a href="#model-optimization" id="toc-model-optimization" class="nav-link" data-scroll-target="#model-optimization">Model Optimization</a></li>
+  <li><a href="#overall-measures-on-test-data" id="toc-overall-measures-on-test-data" class="nav-link" data-scroll-target="#overall-measures-on-test-data">Overall Measures on Test Data</a></li>
+  <li><a href="#analysis-of-bias-auditing-for-bias-across-racial-groups" id="toc-analysis-of-bias-auditing-for-bias-across-racial-groups" class="nav-link" data-scroll-target="#analysis-of-bias-auditing-for-bias-across-racial-groups">Analysis of Bias: Auditing for Bias Across Racial Groups</a></li>
+  </ul></li>
+  <li><a href="#calibration-error-rate-balance-and-statistical-parity" id="toc-calibration-error-rate-balance-and-statistical-parity" class="nav-link" data-scroll-target="#calibration-error-rate-balance-and-statistical-parity">Calibration, Error Rate Balance, and Statistical Parity</a>
+  <ul class="collapse">
+  <li><a href="#recreating-figure-5-from-chouldechova-2017" id="toc-recreating-figure-5-from-chouldechova-2017" class="nav-link" data-scroll-target="#recreating-figure-5-from-chouldechova-2017">Recreating Figure 5 from Chouldechova (2017)</a></li>
+  <li><a href="#figure-5-from-chouldechova-2017." id="toc-figure-5-from-chouldechova-2017." class="nav-link" data-scroll-target="#figure-5-from-chouldechova-2017.">Figure 5 from Chouldechova (2017).</a></li>
+  </ul></li>
+  <li><a href="#concluding-discussion" id="toc-concluding-discussion" class="nav-link" data-scroll-target="#concluding-discussion">Concluding Discussion</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content quarto-banner-title-block" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Auditing Bias</h1>
+</div>
+
+<div>
+  <div class="description">
+    Predicts employment status. Gives comprehensive audit of bias.
+  </div>
+</div>
 
 
+<div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Dean </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">March 11, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
 
 
 <section id="abstract" class="level2">
