@@ -165,6 +165,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#build-a-model" id="toc-build-a-model" class="nav-link" data-scroll-target="#build-a-model">Build a Model</a></li>
   <li><a href="#find-best-features" id="toc-find-best-features" class="nav-link" data-scroll-target="#find-best-features">Find best features</a></li>
   <li><a href="#find-a-threshold" id="toc-find-a-threshold" class="nav-link" data-scroll-target="#find-a-threshold">Find a Threshold</a></li>
+  <li><a href="#find-the-optimal-threshold" id="toc-find-the-optimal-threshold" class="nav-link" data-scroll-target="#find-the-optimal-threshold">Find the optimal threshold</a></li>
   <li><a href="#evaluate-the-model-from-the-banks-perspective" id="toc-evaluate-the-model-from-the-banks-perspective" class="nav-link" data-scroll-target="#evaluate-the-model-from-the-banks-perspective">Evaluate the Model from the Bank’s Perspective</a></li>
   <li><a href="#evaluate-the-model-from-the-borrowers-perspective" id="toc-evaluate-the-model-from-the-borrowers-perspective" class="nav-link" data-scroll-target="#evaluate-the-model-from-the-borrowers-perspective">Evaluate the Model From the Borrower’s Perspective</a></li>
   <li><a href="#is-it-more-difficult-for-people-in-certain-age-groups-to-access-credit-under-your-proposed-system" id="toc-is-it-more-difficult-for-people-in-certain-age-groups-to-access-credit-under-your-proposed-system" class="nav-link" data-scroll-target="#is-it-more-difficult-for-people-in-certain-age-groups-to-access-credit-under-your-proposed-system">Is it more difficult for people in certain age groups to access credit under your proposed system?</a></li>
@@ -437,7 +438,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="build-a-model" class="level3">
 <h3 class="anchored" data-anchor-id="build-a-model">Build a Model</h3>
-<div id="cell-13" class="cell">
+<p>The code below prepares our loan data for modeling by converting text categories into numbers that our algorithm can understand. We use a label encoder to transform loan intent and credit history into numerical values, manually convert home ownership types into a numbered scale (0-3), and separate our data into features (X_train) and the target we want to predict (y_train, which indicates whether loans were repaid or defaulted). This preprocessing step is essential before we can build our predictive model.</p>
+<div id="cell-14" class="cell">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> LabelEncoder</span>
@@ -637,8 +639,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="find-best-features" class="level3">
 <h3 class="anchored" data-anchor-id="find-best-features">Find best features</h3>
-<p>Below I work to find the best features for our logistic regression model. I experimented with different numbers of features, and found that 2 features yielded the best results. I fit the logistic regression model with a cross-validation of 5 folds for each combination of features.</p>
-<div id="cell-15" class="cell" data-execution_count="8">
+<p>Below I work to find the best features for our logistic regression model.</p>
+<p>This code systematically tests all possible pairs of features to find which combination best predicts loan defaults. For each pair, I train a logistic regression model, evaluate its performance using cross-validation, and store the results. The code then ranks these combinations by their prediction accuracy, revealing that person_home_ownership and loan_percent_income are the most powerful predictors for determining whether someone will repay their loan.</p>
+<p>I experimented with different numbers of features, and found that 2 features yielded the best results. I fit the logistic regression model with a cross-validation of 5 folds for each combination of features.</p>
+<div id="cell-16" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find best features</span></span>
@@ -716,7 +720,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <p>As seen by the table above, the best two features are person_home_ownership and loan_percent_income. Now we can define our weights from these features.</p>
-<div id="cell-17" class="cell" data-execution_count="9">
+<div id="cell-18" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create weight array</span></span>
@@ -730,7 +734,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="find-a-threshold" class="level3">
 <h3 class="anchored" data-anchor-id="find-a-threshold">Find a Threshold</h3>
-<div id="cell-19" class="cell" data-execution_count="10">
+<p>Below I build a loan approval model using the two most predictive features and calculate potential profits for the bank. I create functions to estimate earnings from successfully repaid loans (with 10 years of interest) and losses from defaulted loans (with only 3 years of interest plus a 70% loss of principal). These calculations will help determine the optimal threshold for approving loans that maximizes the bank’s profits.</p>
+<div id="cell-21" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start by defining X_train with the features found above</span></span>
@@ -753,8 +758,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> loan_amount <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> <span class="fl">0.25</span> <span class="op">*</span> interest_rate)<span class="op">**</span><span class="dv">3</span> <span class="op">-</span> <span class="fl">1.7</span> <span class="op">*</span> loan_amount</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Our manipulated data:</p>
-<div id="cell-21" class="cell" data-execution_count="11">
+<p>Our manipulated data, meaning we only kept the two most predictive features:</p>
+<div id="cell-23" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>X_train.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -803,7 +808,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<div id="cell-22" class="cell">
+</section>
+<section id="find-the-optimal-threshold" class="level3">
+<h3 class="anchored" data-anchor-id="find-the-optimal-threshold">Find the optimal threshold</h3>
+<p>The code below finds the optimal threshold for loan approval by testing 100 different cutoff points between 0 and 1. For each threshold, I calculate the expected profit by approving loans below that threshold (predicted to be repaid) and rejecting those above it (predicted to default). I then identify the profit-maximizing threshold, visualizing the relationship between thresholds and profits, and reporting key metrics including the expected profit per borrower and the overall loan approval rate.</p>
+<div id="cell-26" class="cell">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Finding the optimal threshold</span></span>
@@ -896,7 +905,7 @@ Approval rate: 92.2%</code></pre>
 </section>
 <section id="evaluate-the-model-from-the-banks-perspective" class="level3">
 <h3 class="anchored" data-anchor-id="evaluate-the-model-from-the-banks-perspective">Evaluate the Model from the Bank’s Perspective</h3>
-<div id="cell-25" class="cell" data-execution_count="13">
+<div id="cell-29" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>url <span class="op">=</span> <span class="st">"https://raw.githubusercontent.com/PhilChodrow/ml-notes/main/data/credit-risk/test.csv"</span></span>
@@ -911,7 +920,8 @@ Approval rate: 92.2%</code></pre>
 <span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>X_test <span class="op">=</span> df_test[[<span class="st">'person_home_ownership'</span>, <span class="st">'loan_percent_income'</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div id="cell-26" class="cell">
+<p>Below I evaluate our loan model on new testing data, calculating approval rates and expected profits. It applies our optimal threshold to predict which loans to approve, estimates potential earnings from repaid loans and losses from defaults, and generates a performance report with key metrics. I also create a histogram showing the distribution of default probabilities across all applicants, with a vertical line marking our chosen approval threshold, helping us visualize how our model makes decisions.</p>
+<div id="cell-31" class="cell">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a></span>
@@ -1012,7 +1022,8 @@ Expected profit per borrower on test set: $1,394.87</code></pre>
 </section>
 <section id="is-it-more-difficult-for-people-in-certain-age-groups-to-access-credit-under-your-proposed-system" class="level3">
 <h3 class="anchored" data-anchor-id="is-it-more-difficult-for-people-in-certain-age-groups-to-access-credit-under-your-proposed-system">Is it more difficult for people in certain age groups to access credit under your proposed system?</h3>
-<div id="cell-30" class="cell" data-execution_count="15">
+<p>To answer this question, I first created five age brackets (under 30, 30-50, 50-70, 70-90, and over 90) and calculated the approval rate for each group. I then visualized these rates in a bar chart. The results reveal a concerning pattern: while younger applicants have similar approval chances, there’s a sharp decline for those over 70, with virtually no approvals for applicants over 90, highlighting potential age-based disparities in credit access.</p>
+<div id="cell-36" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create age groups</span></span>
@@ -1057,8 +1068,8 @@ Name: approved, dtype: float64</code></pre>
 </div>
 </div>
 </div>
-<p>This plot shows that certain age groups have different approval rates. We see that ages under 70 have relatively similar approval rates, but a sharp decline for the 70-90 age range and a 0 approval rate for those over 90. This is an interesting finding and showcases that older individuals have a much harder time accessing credit.</p>
-<div id="cell-32" class="cell" data-execution_count="16">
+<p>Figure 4. Shows the approval rates by age group.</p>
+<div id="cell-38" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">6</span>))</span>
@@ -1077,7 +1088,8 @@ Name: approved, dtype: float64</code></pre>
 </section>
 <section id="is-it-more-difficult-for-people-to-get-loans-in-order-to-pay-for-medical-expenses-how-does-this-compare-with-the-actual-rate-of-default-in-that-group-what-about-people-seeking-loans-for-business-ventures-or-education" class="level3">
 <h3 class="anchored" data-anchor-id="is-it-more-difficult-for-people-to-get-loans-in-order-to-pay-for-medical-expenses-how-does-this-compare-with-the-actual-rate-of-default-in-that-group-what-about-people-seeking-loans-for-business-ventures-or-education">Is it more difficult for people to get loans in order to pay for medical expenses? How does this compare with the actual rate of default in that group? What about people seeking loans for business ventures or education?</h3>
-<div id="cell-35" class="cell" data-execution_count="17">
+<p>To answer this questionn, I examine how loan approval rates differ based on the purpose of the loan. I grouped the data by loan intent (such as education, medical, or business), calculate both the approval rate and the actual default rate for each category, and display these statistics side by side.</p>
+<div id="cell-42" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># loan intent</span></span>
@@ -1099,8 +1111,8 @@ Name: approved, dtype: float64</code></pre>
 5            VENTURE      91.804979     14.626556</code></pre>
 </div>
 </div>
-<p>Here we see the approval and default rates based on loan intent. Looking at the approval rates, medical loans do in fact have the lowest approval rate and the second highest actual rate of default. On the other hand, education hsa the second highest approval rate and the third highest actual rate of default. Venture loans have a similar approval rate but the lowest default rate.</p>
-<div id="cell-37" class="cell" data-execution_count="18">
+<p>Here we see the approval and default rates based on loan intent. Looking at the approval rates, medical loans do in fact have the lowest approval rate and the second highest actual rate of default. On the other hand, education has the second highest approval rate and the third highest actual rate of default. Venture loans have a similar approval rate but the lowest default rate.</p>
+<div id="cell-44" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Loan intent plot</span></span>
@@ -1124,7 +1136,7 @@ Name: approved, dtype: float64</code></pre>
 </section>
 <section id="how-does-a-persons-income-level-impact-the-ease-with-which-they-can-access-credit-under-your-decision-system" class="level3">
 <h3 class="anchored" data-anchor-id="how-does-a-persons-income-level-impact-the-ease-with-which-they-can-access-credit-under-your-decision-system">How does a person’s income level impact the ease with which they can access credit under your decision system?</h3>
-<div id="cell-40" class="cell" data-execution_count="19">
+<div id="cell-47" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Analyze by income level</span></span>
@@ -1151,7 +1163,7 @@ Overall approval rate: 91.6%</code></pre>
 </div>
 </div>
 <p>I created 5 income brackets to help show which segments of perspective borrowers have access to credit. Clearly wealth plays a role: the very high income bracket almost has a 100% approval rate, and the high bracket is not far behind. Going to the very low bracket, it is much lower (80%). It is important though to look at the actual default rates. While the approval rate for very low income is 20% lower than the very high income bracket, the actual default rate is notably 33% higher. So, the approval rate differs logically, except it is interesting how the gap between approval rates and actual default rates is not entirely linear.</p>
-<div id="cell-42" class="cell" data-execution_count="20">
+<div id="cell-49" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>plt.bar(income_analysis[<span class="st">'income_category'</span>], income_analysis[<span class="st">'approval_rate'</span>], color<span class="op">=</span><span class="st">'salmon'</span>)</span>
