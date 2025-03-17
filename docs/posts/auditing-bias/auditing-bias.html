@@ -107,6 +107,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../styles.css">
 </head>
@@ -845,7 +874,7 @@ Overall  0.2146 (21.46%)  </code></pre>
 </section>
 <section id="calibration-error-rate-balance-and-statistical-parity" class="level2">
 <h2 class="anchored" data-anchor-id="calibration-error-rate-balance-and-statistical-parity">Calibration, Error Rate Balance, and Statistical Parity</h2>
-<p>Next we will delve into 3 specific measures of bias: calibration, error rate balance, and statistical parity. To quickly summarize the measures: - Calibration: A score is well-calibrated if it reflects the same likelihood of recidivism irrespective of the individuals’ group membership. Calibration in this context is similar to saying “free from predictive bias.” - Statistical parity: A score S = S(x) satisfies statistical parity if the proportion of individuals classified as high-risk is the same for each group. Are group-specific false positive rates equal to group-specific false negative rates? - Error rate balance: A score S = S(x) satisfies error rate balance if the false positive and false negative error rates are equal across groups.</p>
+<p>Next we will delve into 3 specific measures of bias: calibration, error rate balance, and statistical parity. To quickly summarize the measures: - Calibration: A score is well-calibrated if it reflects the same likelihood of employment irrespective of the individuals’ group membership. Calibration in this context is similar to saying “free from predictive bias.” - Statistical parity: A score S = S(x) satisfies statistical parity if the proportion of individuals classified as employed is the same for each group. Are group-specific false positive rates equal to group-specific false negative rates? - Error rate balance: A score S = S(x) satisfies error rate balance if the false positive and false negative error rates are equal across groups.</p>
 <p>Let’s see how our model performs on these measures. For each measure of bias, I calculate the important measures by group and overall. For the calibration analysis, the PPV by group is crucial: a well-calibrated model should have similar PPV across all groups. For the error rate balance, it is most important to look at the FPR and FNR by group: these should be similar across all groups. For the statistical parity, the prediction rates should be similar across groups.</p>
 <div id="cell-38" class="cell" data-execution_count="104">
 <details class="code-fold">
@@ -1208,11 +1237,12 @@ Black (Group 2): Prevalence=0.429, PPV=0.755, FNR=0.143, FPR=0.209</code></pre>
 <h3 class="anchored" data-anchor-id="figure-5-from-chouldechova-2017.">Figure 5 from Chouldechova (2017).</h3>
 <p>Plots the observed (FNR, FPR) points for White (Group 1) and Black (Group 2) individuals. The orange line represents the feasible (FNR, FPR) combinations for White individuals with fixed prevalence and PPV. The dark grey line represents the feasible (FNR, FPR) combinations for Black individuals when PPV is set equal to the White PPV. Similarly to Chouldechova, I create nested shaded regions showing feasible (FNR, FPR) combinations for Black individuals when PPV is allowed to vary within different thresholds (δ = 0.05, 0.1, 0.125). The visualization illustrates the impossibility theorem described by Chouldechova - that when prevalence rates differ between groups, it’s mathematically impossible to simultaneously achieve calibration, error rate balance, and statistical parity unless the classifier is perfect. This figure also demonstrates the inherent trade-offs in fairness criteria and explains why achieving all fairness definitions simultaneously is often impossible in real-world scenarios.</p>
 <p>If we desired to tune our classifier threshold so that the false positive rates were equal between groups, how much would we need to change the false negative rate?</p>
-<p>To look into this, we need to examine the feasible (FNR, FPR) combinations shown in our plot, particularly focusing on the dark grey line that represents feasible combinations for Black individuals when their PPV equals the White PPV. Equation 2.6 states the following: - FPR = (p/(1-p)) ((1-PPV)/PPV) (1-FNR)</p>
+<p>To look into this, we need to examine the feasible (FNR, FPR) combinations shown in our plot, particularly focusing on the dark grey line that represents feasible combinations for Black individuals when their PPV equals the White PPV. Equation 2.6 states the following: <span class="math display">\[\text{FPR} = \frac{p}{1-p} \cdot \frac{1-\text{PPV}}{\text{PPV}} \cdot (1-\text{FNR})\]</span></p>
 <p>Chelnova discusses 3 possible tuning strategies when prevelence differs between groups. The relevant one for us is to allow unequal FNRs to maintain equal PPVs and achieve equal FPRs. Looking at our data above and following this strategy, we can: - Set the target FPR for Black individuals equal to White FPR (0.200) - Set the PPV for Black individuals equal to White PPV (0.797) - Solve for the required FNR for Black individuals</p>
-<p>Rearranging equation 2.6 to solve for FNR, we get: - FNR = 1 - (FPR (1-p) PPV) / (p (1-PPV)) - FNR = 1 - (0.200 (1-0.429) 0.797) / (0.429 (1-0.797)) - FNR = -0.45</p>
+<p>Rearranging equation 2.6 to solve for FNR, we get: <span class="math display">\[\text{FNR} = 1 - \frac{\text{FPR} \cdot (1-p) \cdot \text{PPV}}{p \cdot (1-\text{PPV})}\]</span></p>
+<p>And so solve for the FNR with White PPV: <span class="math display">\[\text{FNR} = 1 - \frac{0.200 \cdot (1-0.429) \cdot 0.797}{0.429 \cdot (1-0.797)} = -0.45\]</span></p>
 <p>This negative value indicates that it’s mathematically impossible to achieve equal FPRs while maintaining equal PPVs with our current prevalence rates. The equation is telling us we would need a negative FNR, which is not feasible. This aligns with Chouldechova’s discussion - when prevalence rates differ significantly, enforcing equal FPRs while maintaining calibration (equal PPVs) can require extreme and often impossible adjustments to the FNR.</p>
-<p>If we instead relax the equal PPV constraint and use the actual Black PPV (0.755), we can achieve equal FPRs while maintaining the current PPVs: - FNR = 1 - (FPR (1-p) PPV) / (p (1-PPV)) - FNR = 1 - (0.200 (1-0.429) 0.755) / (0.429 (1-0.755)) - FNR = 0.180</p>
+<p>If we instead relax the equal PPV constraint and use the actual Black PPV (0.755), we can achieve equal FPRs while maintaining the current PPVs: <span class="math display">\[\text{FNR} = 1 - \frac{0.200 \cdot (1-0.429) \cdot 0.755}{0.429 \cdot (1-0.755)} = 0.180\]</span></p>
 <p>This means we would need to increase the FNR for Black individuals from 0.143 to about 0.180 to achieve equal FPRs while maintaining the current PPVs. This demonstrates the fundamental trade-off highlighted in Chouldechova’s paper: when prevalence differs between groups, we cannot simultaneously achieve equal error rates and equal predictive values.</p>
 </section>
 </section>
