@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Andrew Dean">
-<meta name="dcterms.date" content="2025-03-25">
+<meta name="dcterms.date" content="2025-03-26">
 <meta name="description" content="Disccusses, considers, and critiques the the methods used to ensure fairness in ML algorithms.">
 
 <title>Limits of the Quantitative Approach to Bias and Fairness – Andrew Dean’s Machine Learning Blog</title>
@@ -23,7 +23,27 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+  margin-bottom: 0em;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
@@ -129,8 +149,8 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#understanding-fairness" id="toc-understanding-fairness" class="nav-link" data-scroll-target="#understanding-fairness">Understanding Fairness</a></li>
   <li><a href="#quantitative-methods" id="toc-quantitative-methods" class="nav-link" data-scroll-target="#quantitative-methods">Quantitative Methods</a></li>
-  <li><a href="#narayanans-view-a-limitation" id="toc-narayanans-view-a-limitation" class="nav-link" data-scroll-target="#narayanans-view-a-limitation">Narayanan’s View: A Limitation</a></li>
-  <li><a href="#the-quantitative-method-falling-short" id="toc-the-quantitative-method-falling-short" class="nav-link" data-scroll-target="#the-quantitative-method-falling-short">The Quantitative Method Falling Short</a></li>
+  <li><a href="#narayanans-view" id="toc-narayanans-view" class="nav-link" data-scroll-target="#narayanans-view">Narayanan’s View</a></li>
+  <li><a href="#the-quantitative-method-falling-short" id="toc-the-quantitative-method-falling-short" class="nav-link" data-scroll-target="#the-quantitative-method-falling-short">The Quantitative Method: Falling Short</a></li>
   <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
   </ul>
 </nav>
@@ -162,7 +182,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">March 25, 2025</p>
+      <p class="date">March 26, 2025</p>
     </div>
   </div>
   
@@ -174,29 +194,61 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>IN PROGRESS</p>
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>In today’s world, in which we are all driven by data, our personal activities and behaviors are continuously monitored through digital technologies. This information exists in various formats — whether it be in databases, lines of code in JSON, and taken from platforms such as social media. And. data processing continues to accelerate. Huge quantities of data are publicly accessible; enormous datasets can be acquired almost instantly through APIs, or requests can be made to get large amounts of data for analytical purposes. Machine learning algorithms consume these loads of data as direct pathways to generate decisions and suggestions for everyday users, often without their knowledge. Whether it be coorperations, government officials, or computer scientists, these models are widely used and have become an integral part of our lives. As algorithmic decision-making expanded into consequential domains, critics have identified biases against specific demographic groups. Notable examples that we have discussed include predictive policing algorithms and criminal recidivism tools that were demonstrated to exhibit significant bias against racial minorities. Because of this, it is crucial to employ metrics that assess algorithmic fairness. Today, various fairness verification frameworks are widely used, employing various quantitative methodologies, but this does not mean algorithms are thus definitively fair. Before we get into that, let’s discuss what fairness truly means in the machine learning realm.</p>
 </section>
 <section id="understanding-fairness" class="level2">
 <h2 class="anchored" data-anchor-id="understanding-fairness">Understanding Fairness</h2>
+<p>Three primary quantitative fairness definitions exist. Error rate parity ensures all groups experience identical false negative and false positive rates - meaning algorithmic mistakes occur with equal frequency regardless of whether an individual belongs to Group A or Group B. Acceptance rate parity equalizes acceptance rates across all groups, ensuring algorithmic outcomes remain independent of group membership. Sufficiency requires that the probability of experiencing a positive outcome following a positive prediction remains consistent across all subgroups while similarly ensuring the probability of experiencing a negative outcome following a negative prediction remains uniform across subgroups. Another key notion, demographic parity, mandates equal selection rates across groups, aligning with the moral perspective of distributive justice by aiming to prevent systemic disadvantage. However, as Barocas, Hardt, and Narayanan (<span class="citation" data-cites="barocasFairnessMachineLearning2023">Barocas, Hardt, and Narayanan (<a href="#ref-barocasFairnessMachineLearning2023" role="doc-biblioref">2023</a>)</span>) note, this approach can overlook differences in qualification rates, raising questions about its applicability in ensuring true fairness.</p>
+<p>From a moral perspective, three viewpoints frame fairness considerations: narrow, middle, and broad. The narrow view maintains that individuals similar in task-relevant aspects deserve similar treatment, comparing all people as individuals rather than as group members. The middle view says that decision-makers must avoid perpetuating injustice by treating apparently dissimilar individuals similarly when their differences stem from problematic origins. The broad equality view aspires for individuals with comparable abilities and ambitions to achieve similar successes despite inevitable inequalities. This perspective transcends decision-making fairness to address the fundamental design of societal institutions, aiming to prevent unjust disparities from emerging initially (<span class="citation" data-cites="barocasFairnessMachineLearning2023">Barocas, Hardt, and Narayanan (<a href="#ref-barocasFairnessMachineLearning2023" role="doc-biblioref">2023</a>)</span>).</p>
+<p>A real-world example illustrating the challenges of quantitative fairness is the use of the COMPAS algorithm in the U.S. judicial system to predict recidivism. A study by ProPublica found that Black defendants were disproportionately labeled as higher risk compared to white defendants, despite similar reoffending rates (<span class="citation" data-cites="angwinFairnessMachineLearning2016">Angwin et al. (<a href="#ref-angwinFairnessMachineLearning2016" role="doc-biblioref">2016</a>)</span>). This case highlights the difficulties in achieving error rate parity, as false positive and false negative rates were not equal across racial groups. From a moral standpoint, this aligns with the middle fairness perspective, which emphasizes the importance of addressing systemic biases that lead to unjust outcomes (<span class="citation" data-cites="barocasFairnessMachineLearning2023">Barocas, Hardt, and Narayanan (<a href="#ref-barocasFairnessMachineLearning2023" role="doc-biblioref">2023</a>)</span>).</p>
 </section>
 <section id="quantitative-methods" class="level2">
 <h2 class="anchored" data-anchor-id="quantitative-methods">Quantitative Methods</h2>
+<p>​An illustrative example of employing both quantitative and moral frameworks to critique algorithmic bias is found in the study “Algorithmic Bias? An Empirical Study into Apparent Gender-Based Discrimination in Displaying STEM Career Ads” by Lambrecht and Tucker (<span class="citation" data-cites="lambrechtAlgorithmicBiasEmpirical2019">Lambrecht and Tucker (<a href="#ref-lambrechtAlgorithmicBiasEmpirical2019" role="doc-biblioref">2019</a>)</span>). This research investigates whether online advertising algorithms display STEM job advertisements differently based on gender. The authors conducted a field experiment by creating ads for STEM careers and observed their delivery across users. Their findings revealed that, even when controlling for factors like user behavior and advertiser intent, women were less likely to be shown these ads compared to men. The study suggests that this disparity arises not from explicit gender bias in the algorithms themselves but from underlying economic factors that lead to unintended, uneven outcomes. For instance, if women are less likely to click on STEM ads, the algorithm may optimize ad delivery towards men to maximize engagement, inadvertently perpetuating gender imbalances in STEM fields. This scenario demonstrates a failure to uphold the principle of demographic parity, where the likelihood of viewing a STEM career advertisement should be independent of gender. From a broader ethical standpoint, the study highlights the responsibility of platforms to ensure that their algorithms do not reinforce societal stereotypes or existing disparities. By critically analyzing and addressing these biases, the research underscores the importance of integrating both quantitative assessments and moral considerations to foster fairness in algorithmic decision-making.​</p>
 </section>
-<section id="narayanans-view-a-limitation" class="level2">
-<h2 class="anchored" data-anchor-id="narayanans-view-a-limitation">Narayanan’s View: A Limitation</h2>
+<section id="narayanans-view" class="level2">
+<h2 class="anchored" data-anchor-id="narayanans-view">Narayanan’s View</h2>
+<p>Quantitative definitions of fairness alone are insufficient to exonerate an algorithm, argues Arvind Narayanan, a computer scientist and professor at Princeton University. In his October 11th, 2022 talk, titled <em>“The Limits of the Quantitative Approach to Discrimination,”</em> Narayanan presents a critical perspective on the overreliance on classical numerical fairness metrics. His key assertion highlights this: “Currently quantitative methods are primarily used to justify the status quo. I would argue that they do more harm than good” (<span class="citation" data-cites="narayananLimitsQuantitativeApproach2022">Narayanan (<a href="#ref-narayananLimitsQuantitativeApproach2022" role="doc-biblioref">2022</a>)</span>).</p>
+<p>He opens his speech with a well known quote: “all models are wrong, but some models are useful” (<span class="citation" data-cites="narayananLimitsQuantitativeApproach2022">Narayanan (<a href="#ref-narayananLimitsQuantitativeApproach2022" role="doc-biblioref">2022</a>)</span>), emphasizing that no machine learning model is perfectly accurate. The very process of simplifying complex realities into data-friendly trends inevitably introduces bias. By relying on these generalizations, models unintentionally reinforce the existing state of the world - a state already riddled with inequality and discrimination. Narayanan points out that data is far from neutral, stating, “data aren’t inert and objective. They are political, and produced towards certain ends” (<span class="citation" data-cites="narayananLimitsQuantitativeApproach2022">Narayanan (<a href="#ref-narayananLimitsQuantitativeApproach2022" role="doc-biblioref">2022</a>)</span>). Since data collection serves specific purposes, bias is inherently woven into the dataset from the start.</p>
+<p>This idea is further elaborated in <em>Fairness and Machine Learning: Limitations and Opportunities,</em> co-authored by Narayanan, Barocas, and Hardt. The authors explain how the world’s complexities are distilled into rows, columns, and numerical values — an inherently flawed process. They challenge the notion of data as an objective snapshot of reality, arguing that “the term measurement is misleading, evoking an image of a dispassionate scientist recording what she observes, yet…it requires subjective human decisions” (<span class="citation" data-cites="barocasFairnessMachineLearning2023">Barocas, Hardt, and Narayanan (<a href="#ref-barocasFairnessMachineLearning2023" role="doc-biblioref">2023</a>)</span>).</p>
+<p>While people often believe data speaks for itself, Narayanan offers a more clear cut view: data is less an impartial truth and more a reflection of the systemic biases and inequalities that shape society. To counteract this, he advocates for a shift in focus: “we should be spending most of our time on curating and interrogating datasets before ever searching for statistical significance or fitting a model … it is important to look behind the facade of numbers to understand the hidden assumptions and politics of datasets” (<span class="citation" data-cites="narayananLimitsQuantitativeApproach2022">Narayanan (<a href="#ref-narayananLimitsQuantitativeApproach2022" role="doc-biblioref">2022</a>)</span>). This approach essentially reframes the role of data analysis, urging researchers to prioritize understanding the dataset’s origins and embedded biases rather than rushing to derive conclusions from potentially flawed numbers.</p>
 </section>
 <section id="the-quantitative-method-falling-short" class="level2">
-<h2 class="anchored" data-anchor-id="the-quantitative-method-falling-short">The Quantitative Method Falling Short</h2>
+<h2 class="anchored" data-anchor-id="the-quantitative-method-falling-short">The Quantitative Method: Falling Short</h2>
+<p>Arvind Narayanan’s critique underscores the limitations of relying solely on quantitative methods to assess algorithmic fairness. A pertinent example is found in the study “Ride-share matching algorithms generate income inequality” by Bokányi and Hannák (<span class="citation" data-cites="bokanyiRideshareMatchingAlgorithms2021">Bokányi and Hannák (<a href="#ref-bokanyiRideshareMatchingAlgorithms2021" role="doc-biblioref">2021</a>)</span>) This research examines how ride-sharing platforms’ matching algorithms may inadvertently contribute to income disparities among drivers. The authors developed a computational model simulating various factors such as driver and passenger locations, traffic conditions, and city layouts. Their simulations revealed that minor adjustments in system parameters could lead to significant income variations among drivers, even when their performance levels were identical. This suggests that the algorithm’s design choices can unpredictably affect income distribution, potentially reinforcing existing inequalities. While the statistical analyses in the study are robust, focusing solely on these quantitative metrics overlooks the broader ethical implications. The study does not sufficiently address the responsibility of platform designers to recognize and mitigate the reinforcement of societal inequities through algorithmic decisions. By concentrating exclusively on quantitative factors, the research misses an opportunity to explore how such algorithms might perpetuate systemic injustices, highlighting the need for a more holistic approach that integrates both quantitative analysis and ethical considerations.</p>
+<p>This study exemplifies what D’Ignazio and Klein (<span class="citation" data-cites="dignazioDataFeminism2023">D’Ignazio and Klein (<a href="#ref-dignazioDataFeminism2023" role="doc-biblioref">2023</a>)</span>) term “Big Dick Data” in Data Feminism. They define this concept as big data projects driven by patriarchal, controlling ambitions of totalizing control through data collection and analysis. These projects are particularly harmful because they disregard context and overstate their technical and scientific authority. Data Feminism emphasizes the necessity of interrogating the the platforms under which data is gathered, an essential step that Ali et al.&nbsp;blatantly neglected.</p>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>To tie it back to Narayanan’s speech, he opens it up with a statement that should not be taken lightly: “I hope that this talk goes some way towards busting the myth that numbers don’t lie” (<span class="citation" data-cites="narayananLimitsQuantitativeApproach2022">Narayanan (<a href="#ref-narayananLimitsQuantitativeApproach2022" role="doc-biblioref">2022</a>)</span>). By the end, it’s clear that numbers, while often treated as objective truth, are shaped by the biases baked into the data they’re drawn from. This challenges the common belief that many, including myself, have in data as a driving force of truth. Through exploring these studies, it becomes evident that datasets are never fully neutral or detached from the world’s inequalities, and should thus all be taken from a critical perspective. As seen in the studies I have discussed, researchers can manipulate quantitative methods to validate their desired outcomes and frame the results in a way that is favorable to their argument.</p>
+<p>Narayanan’s argument pushes even further, claiming that quantitative methods often do more harm than good, reinforcing systemic biases under the notion of objectivity. While this criticism holds weight, I believe the solution isn’t to abandon quantitative methods altogether but to recognize their limitations and use them more thoughtfully. Quantitative metrics can still be powerful tools to uncover injustice if used responsibly. The key lies in avoiding reliance on any single definition of fairness. Since different definitions can yield conflicting conclusions, multiple perspectives must be considered to paint a fuller, more honest picture of algorithmic behavior. Moreover, numbers alone are never enough. Ethical frameworks, including the narrow, middle, and broad views of fairness, must guide how we interpret and apply these metrics. Only by blending quantitative analysis with moral reasoning can we hope to uncover and challenge the hidden biases within algorithmic systems.</p>
+
 
 
 </section>
 
-</main> <!-- /main -->
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-angwinFairnessMachineLearning2016" class="csl-entry" role="listitem">
+Angwin, Julia, ProPublica Larson, Jeff Mattu, and Lauren Kirchner. 2016. <span>“Machine Bias.”</span> <em>ProPublica</em>.
+</div>
+<div id="ref-barocasFairnessMachineLearning2023" class="csl-entry" role="listitem">
+Barocas, Solon, Moritz Hardt, and Arvind Narayanan. 2023. <em>Fairness and Machine Learning: Limitations and Opportunities</em>. <span>MIT Press</span>.
+</div>
+<div id="ref-bokanyiRideshareMatchingAlgorithms2021" class="csl-entry" role="listitem">
+Bokányi, Eszter, and Anikó Hannák. 2021. <span>“Ride-Share Matching Algorithms Generate Income Inequality.”</span> <em>Scientific Reports</em> 11 (1): 8537.
+</div>
+<div id="ref-dignazioDataFeminism2023" class="csl-entry" role="listitem">
+D’Ignazio, Catherine, and Lauren F Klein. 2023. <em>Data Feminism</em>. <span>MIT Press</span>.
+</div>
+<div id="ref-lambrechtAlgorithmicBiasEmpirical2019" class="csl-entry" role="listitem">
+Lambrecht, Anja, and Catherine Tucker. 2019. <span>“Algorithmic Bias? An Empirical Study into Apparent Gender-Based Discrimination in Displaying STEM Career Ads.”</span> <em>Management Science</em> 65 (7): 2966–81.
+</div>
+<div id="ref-narayananLimitsQuantitativeApproach2022" class="csl-entry" role="listitem">
+Narayanan, Arvind. 2022. <span>“The Limits of the Quantitative Approach to Discrimination.”</span> Speech.
+</div>
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
