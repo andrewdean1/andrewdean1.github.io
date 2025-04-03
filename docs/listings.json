@@ -2,6 +2,7 @@
   {
     "listing": "/posts.html",
     "items": [
+      "/posts/logistic-regression/logistic-regression.html",
       "/posts/bias-and-fairness/essay.html",
       "/posts/perceptron-blog/perceptron-blog.html",
       "/posts/replication/replication.html",
@@ -13,6 +14,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/logistic-regression/logistic-regression.html",
       "/posts/bias-and-fairness/essay.html",
       "/posts/perceptron-blog/perceptron-blog.html",
       "/posts/replication/replication.html",

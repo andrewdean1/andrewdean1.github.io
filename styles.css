@@ -380,11 +380,20 @@ footer {
 .quarto-title-banner {
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
   padding: 3rem 0 !important;
+  min-height: 40px !important;
 }
 
 .quarto-title-banner h1 {
   font-size: 2.5rem !important;
   font-weight: 700 !important;
+}
+
+.quarto-title-banner .quarto-title-banner-image {
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 40px !important;
+  object-fit: cover;
 }
 
 /* Navbar styling */
